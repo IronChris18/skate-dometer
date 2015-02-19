@@ -17,11 +17,12 @@ import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.content.Intent;
 
 
 import android.widget.Button;
 import android.widget.SeekBar.OnSeekBarChangeListener;
-import android.widget.Textview
+import android.widget.Textview;
 
 //for writing to csv file
 import java.io.FileWriter;
@@ -59,6 +60,14 @@ public class MainActivity extends ActionBarActivity {
 
         return super.onOptionsItemSelected(item);
     }
+
+    // Chris -> I think this has to do with calling our stuff. onCreate should start up
+    // as soon as we start a new activity
+    public void sendMessage(View view) {
+        Intent intent = new Intent(this, MySensorActivity.class);
+    }
+
+
 }
 
 
@@ -71,7 +80,7 @@ public class MainActivity extends ActionBarActivity {
  *******************************************************/
 
 
-public class MySensorActivity extends MainActivity implements SensorEventListener {
+public class MySensorActivity extends MainActivity {
 
     /*
     private Sensor mGyroSensor;
@@ -132,11 +141,6 @@ public class MySensorActivity extends MainActivity implements SensorEventListene
         {
 
             @Override
-            public void onAccuracyChanged(Sensor arg0, int arg1) {
-                //
-            }
-
-            @Override
             public void onSensorChanged(SensorEvent event) {
                 Sensor sensor = event.sensor;
                 if (sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
@@ -168,6 +172,11 @@ public class MySensorActivity extends MainActivity implements SensorEventListene
                 } if (sensor.getType() == Sensor.TYPE_LIGHT) {
                     Light_intensity = event.values[0];
                 }
+            }
+
+            //@Override
+            public void onAccuracyChanged(Sensor arg0, int arg1) {
+                //
             }
         };
 
