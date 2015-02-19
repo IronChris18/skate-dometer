@@ -5,6 +5,28 @@ import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
+import android.os.Build;
+import android.os.Bundle;
+import android.widget.TextView;
+import android.widget.Toast;
+import android.annotation.TargetApi;
+import android.app.Activity;
+import android.content.Context;
+import android.content.pm.PackageManager;
+
+
+import android.widget.Button;
+import android.widget.SeekBar.OnSeekBarChangeListener;
+import android.widget.Textview
+
+//for writing to csv file
+import java.io.FileWriter;
+import java.io.IOException;
+
 
 
 public class MainActivity extends ActionBarActivity {
@@ -43,23 +65,6 @@ public class MainActivity extends ActionBarActivity {
 /********************************************************
  *              Begin sensor class
  *******************************************************/
-import android.hardware.Sensor;
-        import android.hardware.SensorEvent;
-        import android.hardware.SensorEventListener;
-        import android.hardware.SensorManager;
-        import android.os.Build;
-        import android.os.Bundle;
-        import android.widget.TextView;
-        import android.widget.Toast;
-        import android.annotation.TargetApi;
-        import android.app.Activity;
-        import android.content.Context;
-        import android.content.pm.PackageManager;
-
-
-import android.widget.Button;
-import android.widget.SeekBar.OnSeekBarChangeListener;
-import android.widget.Textview
 
 public class MySensorActivity extends MainActivity implements SensorEventListener {
 
@@ -85,6 +90,52 @@ public class MySensorActivity extends MainActivity implements SensorEventListene
     private SensorEventListener mSensorListener;
 
 
+    // first attempt at writing csv, this may need to take an existing file and append to it that way
+    // depending on how timing works with the sensors
+    public void generateCsvFile(String sFilename)
+    {
+        try
+        {
+            FileWriter writer = new FileWriter(sFileName);
+
+            // Need to fix this while loop with a button?
+            while(1) {
+                writer.append(Float.toString(Accel_x));
+                writer.append(',');
+                writer.append(Float.toString(Accel_y));
+                writer.append(',');
+                writer.append(Float.toString(Accel_z));
+                writer.append(',');
+                writer.append(Float.toString(Gyro_x));
+                writer.append(',');
+                writer.append(Float.toString(Gyro_y));
+                writer.append(',');
+                writer.append(Float.toString(Gyro_z));
+                writer.append(',');
+                writer.append(Float.toString(Mag_x));
+                writer.append(',');
+                writer.append(Float.toString(Mag_y));
+                writer.append(',');
+                writer.append(Float.toString(Mag_z));
+                writer.append(',');
+                writer.append(Float.toString(Light_intensity));
+                writer.append('\n');
+
+            }
+
+            //generate whatever data you want
+
+            writer.flush();
+            writer.close();
+        }
+        catch(IOException e)
+        {
+            e.printStackTrace();
+        }
+
+    }
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -95,6 +146,8 @@ public class MySensorActivity extends MainActivity implements SensorEventListene
         //mGyroSensor= mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
 
 
+        // This is what we found on the stack overflow, something is screwed up though, context might be incorrect
+        //http://stackoverflow.com/questions/4343342/is-there-a-way-to-retrieve-multiple-sensor-data-in-android
         mSensorManager = (SensorManager) this.getSystemService(Context.SENSOR_SERVICE);
             mSensorListener = new SensorEventListener() {
 
