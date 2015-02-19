@@ -62,9 +62,14 @@ public class MainActivity extends ActionBarActivity {
 }
 
 
+
+
+
+
 /********************************************************
  *              Begin sensor class
  *******************************************************/
+
 
 public class MySensorActivity extends MainActivity implements SensorEventListener {
 
@@ -75,6 +80,23 @@ public class MySensorActivity extends MainActivity implements SensorEventListene
     private Sensor Magnetometer;
     */
 
+    // pedometer tutorial
+    // http://nebomusic.net/androidlessons/Pedometer_Project.pdf
+    //values for PEDOMETER/STEPS
+    Private Button buttonReset;
+    private float acceleration;
+
+    //values to Calculate Number of Steps
+    private float previousY;
+    private float currentY;
+    private int numSteps;
+
+    // SeekBar Fields
+    private SeekBar seekbar;
+    private int threshold;
+
+
+    //values for csv file
     float Accel_x;
     float Accel_y;
     float Accel_z;
@@ -89,25 +111,29 @@ public class MySensorActivity extends MainActivity implements SensorEventListene
     private SensorManager mSensorManager;
     private SensorEventListener mSensorListener;
 
-
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-         // Get an instance of the sensor service
-        // GyroSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        //mGyroSensor= mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
-
+        threshold = 10;
+        previousY = 0;
+        currentY = 0;
+        numSteps = 0;
 
         // This is what we found on the stack overflow, something is screwed up though, context might be incorrect
         //http://stackoverflow.com/questions/4343342/is-there-a-way-to-retrieve-multiple-sensor-data-in-android
-        mSensorManager = (SensorManager) this.getSystemService(Context.SENSOR_SERVICE);
-            mSensorListener = new SensorEventListener() {
+        mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+
+
+
+        //private inner class
+        mSensorListener = new SensorEventListener()
+        {
 
             @Override
             public void onAccuracyChanged(Sensor arg0, int arg1) {
+                //
             }
 
             @Override
@@ -117,19 +143,33 @@ public class MySensorActivity extends MainActivity implements SensorEventListene
                     Accel_x = event.values[0];
                     Accel_y = event.values[1];
                     Accel_z = event.values[2];
-                }else if (sensor.getType() == Sensor.TYPE_GYROSCOPE) {
+
+                    /*logic for pedometer -> # of steps */
+
+                    // fetch the current y
+                    currentY = accel_y;
+
+                    //Measure if a step is taken
+                    if (Math.abs(currentY - previousY) > threshold){
+                           numSteps++;
+                    }
+
+                    // store previous y
+                    previousY = y;
+
+                } if (sensor.getType() == Sensor.TYPE_GYROSCOPE) {
                     Gyro_x = event.values[0];
                     Gyro_y = event.values[1];
                     Gyro_z = event.values[2];
-                }else if (sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
+                } if (sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
                     Mag_x = event.values[0];
                     Mag_y = event.values[1];
                     Mag_z = event.values[2];
-                }else if (sensor.getType() == Sensor.TYPE_LIGHT) {
+                } if (sensor.getType() == Sensor.TYPE_LIGHT) {
                     Light_intensity = event.values[0];
                 }
             }
-        }
+        };
 
         mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_GAME);
         mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE), SensorManager.SENSOR_DELAY_GAME);
@@ -169,6 +209,8 @@ public class MySensorActivity extends MainActivity implements SensorEventListene
 
             // Need to fix this while loop with a button?
             while(1) {
+                writer.append(Float.toString(timestamp));
+                writer.append(',');
                 writer.append(Float.toString(Accel_x));
                 writer.append(',');
                 writer.append(Float.toString(Accel_y));
