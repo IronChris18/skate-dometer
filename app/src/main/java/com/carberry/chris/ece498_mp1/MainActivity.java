@@ -7,6 +7,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -76,29 +77,11 @@ public class MainActivity extends ActionBarActivity {
         currentY = 0;
         numSteps = 0;
 
-
-
-        //FileWriter writer = new FileWriter("sensor_data.csv");
-        try {
-            FileWriter writer = new FileWriter("sensor_data.csv");
-        }
-        catch(IOException e)
-        {
-            e.printStackTrace();
-        }
-
-
-        // This is what we found on the stack overflow, something is screwed up though, context might be incorrect
-        //http://stackoverflow.com/questions/4343342/is-there-a-way-to-retrieve-multiple-sensor-data-in-android
-
         timeStamp = System.currentTimeMillis();     //time since system boot
-
-
 
         //private inner class
         mSensorListener = new SensorEventListener()
         {
-
             @Override
             public void onSensorChanged(SensorEvent event) {
                 Sensor sensor = event.sensor;
@@ -135,26 +118,19 @@ public class MainActivity extends ActionBarActivity {
                     Light_intensity = event.values[0];
                 }
 
-                for (int i = 0; i % 1 == 0; i++)
+                float timeStamp_new = System.currentTimeMillis() - timeStamp;
+
+                System.out.println("Path: "+Environment.getExternalStorageDirectory().toString()+"/data.csv");
+
+                try
                 {
-                    float timeStamp_new = System.currentTimeMillis() - timeStamp;
-
-                    //String csv = "data.csv";
-
-                    File file = new File("data.csv");
-                    String csv = file.getAbsolutePath();
-
-                    CSVWriter writer = new CSVWriter(new FileWriter(csv, true));
-
-                    String record = Float.toString(timeStamp_new)+"&"+Float.toString(Accel_x)+"&"+Float.toString(Accel_y)+"&"+
-                            Float.toString(Accel_z)+"&"+Float.toString(Gyro_x)+"&"+Float.toString(Gyro_y)+"&"+Float.toString(Gyro_z)+"&"+
-                            Float.toString(Mag_x)+"&"+Float.toString(Mag_y)+"&"+Float.toString(Mag_z)+"&"+Float.toString(Light_intensity);
-
-                    writer.writeNext(record).split("&");
-
+                    CSVWriter writer = new CSVWriter(new FileWriter(Environment.getExternalStorageDirectory().toString()+"/data.csv", true));
+                    String[] record = "4,David,Miller,Australia,30".split(",");
+                    writer.writeNext(record);
                     writer.close();
-
-
+                }
+                catch (IOException e) {
+                    e.printStackTrace();
                 }
 
                 TextView gyro = (TextView) findViewById(R.id.textView);
@@ -226,58 +202,6 @@ public class MainActivity extends ActionBarActivity {
     first attempt at writing csv, this may need to take an existing file and append to it that way
     depending on how timing works with the sensors
     */
-    public void generateCsvFile(String sFilename)
-    {           //call this function onClick (start)
-
-        boolean alreadyExists = new File(sFilename).exists();
-
-        try
-        {
-            if (!alreadyExists)
-            {
-                FileWriter writer = new FileWriter(sFilename);
-            }
-
-            boolean i = true;
-            // Need to fix this while loop with a button?
-
-                float timeStamp_new = System.currentTimeMillis() - timeStamp;
-
-
-                writer.append(Float.toString(timeStamp_new));
-                writer.append(',');
-                writer.append(Float.toString(Accel_x));
-                writer.append(',');
-                writer.append(Float.toString(Accel_y));
-                writer.append(',');
-                writer.append(Float.toString(Accel_z));
-                writer.append(',');
-                writer.append(Float.toString(Gyro_x));
-                writer.append(',');
-                writer.append(Float.toString(Gyro_y));
-                writer.append(',');
-                writer.append(Float.toString(Gyro_z));
-                writer.append(',');
-                writer.append(Float.toString(Mag_x));
-                writer.append(',');
-                writer.append(Float.toString(Mag_y));
-                writer.append(',');
-                writer.append(Float.toString(Mag_z));
-                writer.append(',');
-                writer.append(Float.toString(Light_intensity));
-                writer.append('\n');
-
-            //generate whatever data you want
-
-            writer.flush();
-            writer.close();
-        }
-        catch(IOException e)
-        {
-            e.printStackTrace();
-        }
-
-    }
 
     // Chris -> I think this has to do with calling our stuff. onCreate should start up
     // as soon as we start a new activity
