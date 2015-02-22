@@ -18,25 +18,26 @@
         style="?android:attr/buttonStyleSmall"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/jumps"
+        android:text="Show Jumps"
         android:id="@+id/button2"
         android:layout_centerVertical="true"
         android:layout_centerHorizontal="true"
         android:background="#ff1dfaff"
-        android:paddingEnd="16dp"
-        android:paddingStart="16dp" />
+        android:paddingEnd="5dp"
+        android:paddingStart="5dp" />
 
     <Button
         style="?android:attr/buttonStyleSmall"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/steps"
+        android:text="Show Steps"
         android:id="@+id/button3"
         android:background="#ff1dfaff"
-        android:paddingEnd="16dp"
-        android:paddingStart="16dp"
-        android:layout_marginBottom="38dp"
+        android:paddingEnd="5dp"
+        android:paddingStart="5dp"
         android:layout_above="@+id/button2"
-        android:layout_centerHorizontal="true" />
+        android:layout_alignLeft="@+id/button2"
+        android:layout_alignStart="@+id/button2"
+        android:layout_marginBottom="41dp" />
 
 </RelativeLayout>
