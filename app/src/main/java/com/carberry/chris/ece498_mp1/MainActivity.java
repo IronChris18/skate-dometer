@@ -90,7 +90,7 @@ public class MainActivity extends ActionBarActivity {
                     /*logic for pedometer -> # of steps */
 
                     /* fetch the current y */
-                    currentZ = Accel_Z;
+                    currentZ = Accel_z;
 
                     //Measure if a step is taken
                     if (Math.abs(currentZ - previousZ) > threshold){
@@ -125,7 +125,7 @@ public class MainActivity extends ActionBarActivity {
 
                     String[] record = new String [] { Float.toString(timeStamp_new), Float.toString(Accel_x), Float.toString(Accel_y),
                         Float.toString(Accel_z), Float.toString(Gyro_x), Float.toString(Gyro_y), Float.toString(Gyro_z),
-                        Float.toString(Mag_x), Float.toString(Mag_y), Float.toString(Mag_z), Float.toString(Light_intensity) }.split(",");
+                        Float.toString(Mag_x), Float.toString(Mag_y), Float.toString(Mag_z), Float.toString(Light_intensity) };
 
                     writer.writeNext(record);
                     writer.close();
