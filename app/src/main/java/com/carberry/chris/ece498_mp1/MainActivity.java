@@ -16,15 +16,10 @@ import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-import java.io.FileWriter;
+import java.io.*;
 import java.io.IOException;
-import java.io.File;
 
 import com.opencsv.CSVWriter;
-
-
-
-import java.io.IOException;
 
 import static android.os.SystemClock.uptimeMillis;
 
