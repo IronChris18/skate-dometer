@@ -4,7 +4,6 @@
     <string name="app_name">ECE498_MP1</string>
     <string name="hello_world">Congratulations!\n You\'re trying to be healthy.\n *Background Applause*</string>
     <string name="action_settings">Settings</string>
-    <string name="steps">Show Steps</string>
-    <string name="jumps">Show Jumps</string>
+    <string name="gyro"> </string>
 
 </resources>
