@@ -62,6 +62,24 @@ public class MainActivity extends ActionBarActivity {
     float Light_intensity = 0;
 
     @Override
+    protected void onResume() {
+        // Register a listener for each sensor.
+        super.onResume();
+
+        mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_GAME);
+        mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE), SensorManager.SENSOR_DELAY_GAME);
+        mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD), SensorManager.SENSOR_DELAY_GAME);
+        mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT), SensorManager.SENSOR_DELAY_GAME);
+    }
+
+    @Override
+    protected void onPause() {
+        // important to unregister the sensor when the activity pauses.
+        super.onPause();
+        mSensorManager.unregisterListener((SensorEventListener) this);
+    }
+
+    @Override
     protected final void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -75,8 +93,7 @@ public class MainActivity extends ActionBarActivity {
         timeStamp = System.currentTimeMillis();     //time since system boot
 
         //private inner class
-        mSensorListener = new SensorEventListener()
-        {
+        mSensorListener = new SensorEventListener() {
             @Override
             public void onSensorChanged(SensorEvent event) {
                 Sensor sensor = event.sensor;
@@ -91,7 +108,7 @@ public class MainActivity extends ActionBarActivity {
                     currentY = Accel_y;
 
                     //Measure if a step is taken
-                    if (Math.abs(currentY - previousY) > threshold){
+                    if (Math.abs(currentY - previousY) > threshold) {
                         numSteps++;
                     }
 
@@ -114,20 +131,18 @@ public class MainActivity extends ActionBarActivity {
                 }
 
                 float timeStamp_new = System.currentTimeMillis() - timeStamp;
+                System.out.println("Print_time: " + timeStamp_new + "\nPrint_old: " + timeStamp + "\notherthing" + System.currentTimeMillis());
+                try {
+                    CSVWriter writer = new CSVWriter(new FileWriter(Environment.getExternalStorageDirectory().toString() + "/data.csv", true));
 
-                System.out.println("Path: "+Environment.getExternalStorageDirectory().toString()+"/data.csv");
+                    String[] record = new String[]{Float.toString(timeStamp_new), Float.toString(Accel_x), Float.toString(Accel_y),
+                            Float.toString(Accel_z), Float.toString(Gyro_x), Float.toString(Gyro_y), Float.toString(Gyro_z),
+                            Float.toString(Mag_x), Float.toString(Mag_y), Float.toString(Mag_z), Float.toString(Light_intensity)};
 
-                try
-                {
-                    CSVWriter writer = new CSVWriter(new FileWriter(Environment.getExternalStorageDirectory().toString()+"/data.csv", true));
-                    String[] record = Float.toString(timeStamp_new), Float.toString(Accel_x), Float.toString(Accel_y),
-                        Float.toString(Accel_z), Float.toString(Gyro_x), Float.toString(Gyro_y), Float.toString(Gyro_z),
-                        Float.toString(Mag_x), Float.toString(Mag_y), Float.toString(Mag_z), Float.toString(Light_intensity).split(",");
 
                     writer.writeNext(record);
                     writer.close();
-                }
-                catch (IOException e) {
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
 
@@ -139,19 +154,9 @@ public class MainActivity extends ActionBarActivity {
 
             @Override
             public void onAccuracyChanged(Sensor sensor, int accuracy) {
-
-
+                //do nothing
             }
-
         };
-
-        /*
-        // USE THIS FOR CHECKING IF PHONE HAS THE FEATURE
-        PackageManager PM= this.getPackageManager();
-        boolean gyro = PM.hasSystemFeature(PackageManager.FEATURE_SENSOR_GYROSCOPE);
-        boolean light = PM.hasSystemFeature(PackageManager.FEATURE_SENSOR_LIGHT);
-        */
-
     }
 
     @Override
@@ -178,34 +183,7 @@ public class MainActivity extends ActionBarActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    @Override
-    protected void onResume() {
-        // Register a listener for each sensor.
-        super.onResume();
 
-        mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_GAME);
-        mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE), SensorManager.SENSOR_DELAY_GAME);
-        mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD), SensorManager.SENSOR_DELAY_GAME);
-        mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT), SensorManager.SENSOR_DELAY_GAME);
-    }
-
-    @Override
-    protected void onPause() {
-        // important to unregister the sensor when the activity pauses.
-        super.onPause();
-        mSensorManager.unregisterListener((SensorEventListener) this);
-    }
-
-    /*
-    first attempt at writing csv, this may need to take an existing file and append to it that way
-    depending on how timing works with the sensors
-    */
-
-    // Chris -> I think this has to do with calling our stuff. onCreate should start up
-    // as soon as we start a new activity
-    /*public void sendMessage(View view) {
-        Intent intent = new Intent(this, MySensorActivity.class);
-    }*/
 }
 
 
