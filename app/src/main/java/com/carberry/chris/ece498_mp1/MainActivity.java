@@ -39,8 +39,8 @@ public class MainActivity extends ActionBarActivity {
     private float acceleration;
 
     //values to Calculate Number of Steps
-    private float previousY;
-    private float currentY;
+    private float previousZ;
+    private float currentZ;
     private int numSteps;
 
     // SeekBar Fields
@@ -49,7 +49,7 @@ public class MainActivity extends ActionBarActivity {
 
 
     //values for csv file
-    float timeStamp = 0;
+    float timeStamp = System.currentTimeMillis();;
     float Accel_x = 0;
     float Accel_y = 0;
     float Accel_z = 0;
@@ -61,6 +61,8 @@ public class MainActivity extends ActionBarActivity {
     float Mag_z = 0;
     float Light_intensity = 0;
 
+
+
     @Override
     protected final void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -68,11 +70,11 @@ public class MainActivity extends ActionBarActivity {
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
 
         threshold = 10;
-        previousY = 0;
-        currentY = 0;
+        previousZ = 0;
+        currentZ = 0;
         numSteps = 0;
 
-        timeStamp = System.currentTimeMillis();     //time since system boot
+        //timeStamp = System.currentTimeMillis();     //time since system boot
 
         //private inner class
         mSensorListener = new SensorEventListener()
@@ -88,15 +90,15 @@ public class MainActivity extends ActionBarActivity {
                     /*logic for pedometer -> # of steps */
 
                     /* fetch the current y */
-                    currentY = Accel_y;
+                    currentZ = Accel_Z;
 
                     //Measure if a step is taken
-                    if (Math.abs(currentY - previousY) > threshold){
+                    if (Math.abs(currentZ - previousZ) > threshold){
                         numSteps++;
                     }
 
                     // store previous y
-                    previousY = currentY;
+                    previousZ = currentZ;
 
                 }
                 if (sensor.getType() == Sensor.TYPE_GYROSCOPE) {
@@ -120,9 +122,10 @@ public class MainActivity extends ActionBarActivity {
                 try
                 {
                     CSVWriter writer = new CSVWriter(new FileWriter(Environment.getExternalStorageDirectory().toString()+"/data.csv", true));
-                    String[] record = Float.toString(timeStamp_new), Float.toString(Accel_x), Float.toString(Accel_y),
+
+                    String[] record = new String [] { Float.toString(timeStamp_new), Float.toString(Accel_x), Float.toString(Accel_y),
                         Float.toString(Accel_z), Float.toString(Gyro_x), Float.toString(Gyro_y), Float.toString(Gyro_z),
-                        Float.toString(Mag_x), Float.toString(Mag_y), Float.toString(Mag_z), Float.toString(Light_intensity).split(",");
+                        Float.toString(Mag_x), Float.toString(Mag_y), Float.toString(Mag_z), Float.toString(Light_intensity) }.split(",");
 
                     writer.writeNext(record);
                     writer.close();
