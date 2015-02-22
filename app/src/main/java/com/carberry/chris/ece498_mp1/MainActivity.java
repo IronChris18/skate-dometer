@@ -120,7 +120,10 @@ public class MainActivity extends ActionBarActivity {
                 try
                 {
                     CSVWriter writer = new CSVWriter(new FileWriter(Environment.getExternalStorageDirectory().toString()+"/data.csv", true));
-                    String[] record = "4,David,Miller,Australia,30".split(",");
+                    String[] record = Float.toString(timeStamp_new), Float.toString(Accel_x), Float.toString(Accel_y),
+                        Float.toString(Accel_z), Float.toString(Gyro_x), Float.toString(Gyro_y), Float.toString(Gyro_z),
+                        Float.toString(Mag_x), Float.toString(Mag_y), Float.toString(Mag_z), Float.toString(Light_intensity).split(",");
+
                     writer.writeNext(record);
                     writer.close();
                 }
