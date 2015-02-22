@@ -25,8 +25,6 @@ import static android.os.SystemClock.uptimeMillis;
 
 /* for writing to csv file */
 
-
-
 public class MainActivity extends ActionBarActivity {
 
     private SensorManager mSensorManager;
@@ -41,15 +39,17 @@ public class MainActivity extends ActionBarActivity {
     //values to Calculate Number of Steps
     private float previousZ;
     private float currentZ;
+    private float previousY;
+    private float currentY;
     private int numSteps;
 
     // SeekBar Fields
     private SeekBar seekbar;
-    private int threshold;
+    private double threshold;
 
 
     //values for csv file
-    float timeStamp = System.currentTimeMillis();;
+    long timeStamp = System.currentTimeMillis();;
     float Accel_x = 0;
     float Accel_y = 0;
     float Accel_z = 0;
@@ -69,7 +69,7 @@ public class MainActivity extends ActionBarActivity {
         setContentView(R.layout.activity_main);
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
 
-        threshold = 10;
+        threshold = 10.5;
         previousZ = 0;
         currentZ = 0;
         numSteps = 0;
@@ -91,14 +91,16 @@ public class MainActivity extends ActionBarActivity {
 
                     /* fetch the current y */
                     currentZ = Accel_z;
+                    currentY = Accel_y;
 
                     //Measure if a step is taken
-                    if (Math.abs(currentZ - previousZ) > threshold){
+                    if (((currentZ - previousZ) > threshold)|| (currentY - previousY) > threshold){
                         numSteps++;
                     }
 
                     // store previous y
                     previousZ = currentZ;
+                    previousY = currentY;
 
                 }
                 if (sensor.getType() == Sensor.TYPE_GYROSCOPE) {
@@ -115,9 +117,9 @@ public class MainActivity extends ActionBarActivity {
                     Light_intensity = event.values[0];
                 }
 
-                float timeStamp_new = System.currentTimeMillis() - timeStamp;
+                long timeStamp_new = System.currentTimeMillis() - timeStamp;
 
-                System.out.println("Path: "+Environment.getExternalStorageDirectory().toString()+"/data.csv");
+                //System.out.println("Path: "+Environment.getExternalStorageDirectory().toString()+"/data.csv");
 
                 try
                 {
@@ -148,12 +150,6 @@ public class MainActivity extends ActionBarActivity {
 
         };
 
-        /*
-        // USE THIS FOR CHECKING IF PHONE HAS THE FEATURE
-        PackageManager PM= this.getPackageManager();
-        boolean gyro = PM.hasSystemFeature(PackageManager.FEATURE_SENSOR_GYROSCOPE);
-        boolean light = PM.hasSystemFeature(PackageManager.FEATURE_SENSOR_LIGHT);
-        */
 
     }
 
@@ -199,15 +195,6 @@ public class MainActivity extends ActionBarActivity {
         mSensorManager.unregisterListener((SensorEventListener) this);
     }
 
-    /*
-    first attempt at writing csv, this may need to take an existing file and append to it that way
-    depending on how timing works with the sensors
-    */
 
-    // Chris -> I think this has to do with calling our stuff. onCreate should start up
-    // as soon as we start a new activity
-    /*public void sendMessage(View view) {
-        Intent intent = new Intent(this, MySensorActivity.class);
-    }*/
 }
 
