@@ -154,7 +154,12 @@ public class MainActivity extends ActionBarActivity {
                 for (int i = 0; i % 1 == 0; i++)
                 {
                     float timeStamp_new = System.currentTimeMillis() - timeStamp;
-                    String csv = "data.csv";
+
+                    //String csv = "data.csv";
+
+                    File file = new File("data.csv");
+                    String csv = file.getAbsolutePath();
+
                     CSVWriter writer = new CSVWriter(new FileWriter(csv, true));
 
                     String record = Float.toString(timeStamp_new)+"&"+Float.toString(Accel_x)+"&"+Float.toString(Accel_y)+"&"+
