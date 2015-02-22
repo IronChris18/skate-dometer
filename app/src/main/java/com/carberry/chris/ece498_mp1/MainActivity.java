@@ -17,6 +17,13 @@ import android.widget.TextView;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.File;
+
+import com.opencsv.CSVWriter;
+
+
+
+import java.io.IOException;
 
 import static android.os.SystemClock.uptimeMillis;
 
@@ -46,17 +53,17 @@ public class MainActivity extends ActionBarActivity {
 
 
     //values for csv file
-    float timeStamp;
-    float Accel_x;
-    float Accel_y;
-    float Accel_z;
-    float Gyro_x;
-    float Gyro_y;
-    float Gyro_z;
-    float Mag_x;
-    float Mag_y;
-    float Mag_z;
-    float Light_intensity;
+    float timeStamp = 0;
+    float Accel_x = 0;
+    float Accel_y = 0;
+    float Accel_z = 0;
+    float Gyro_x = 0;
+    float Gyro_y = 0;
+    float Gyro_z = 0;
+    float Mag_x = 0;
+    float Mag_y = 0;
+    float Mag_z = 0;
+    float Light_intensity = 0;
 
     @Override
     protected final void onCreate(Bundle savedInstanceState) {
@@ -69,10 +76,22 @@ public class MainActivity extends ActionBarActivity {
         currentY = 0;
         numSteps = 0;
 
+
+
+        //FileWriter writer = new FileWriter("sensor_data.csv");
+        try {
+            FileWriter writer = new FileWriter("sensor_data.csv");
+        }
+        catch(IOException e)
+        {
+            e.printStackTrace();
+        }
+
+
         // This is what we found on the stack overflow, something is screwed up though, context might be incorrect
         //http://stackoverflow.com/questions/4343342/is-there-a-way-to-retrieve-multiple-sensor-data-in-android
 
-        //timeStamp = uptimeMillis();     //time since system boot
+        timeStamp = System.currentTimeMillis();     //time since system boot
 
 
 
@@ -101,25 +120,52 @@ public class MainActivity extends ActionBarActivity {
                     // store previous y
                     previousY = currentY;
 
-                } if (sensor.getType() == Sensor.TYPE_GYROSCOPE) {
+                }
+                if (sensor.getType() == Sensor.TYPE_GYROSCOPE) {
                     Gyro_x = event.values[0];
                     Gyro_y = event.values[1];
                     Gyro_z = event.values[2];
-                } if (sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
+                }
+                if (sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
                     Mag_x = event.values[0];
                     Mag_y = event.values[1];
                     Mag_z = event.values[2];
-                } if (sensor.getType() == Sensor.TYPE_LIGHT) {
+                }
+                if (sensor.getType() == Sensor.TYPE_LIGHT) {
                     Light_intensity = event.values[0];
                 }
+
+                for (int i = 0; i % 1 == 0; i++)
+                {
+                    float timeStamp_new = System.currentTimeMillis() - timeStamp;
+
+                    //String csv = "data.csv";
+
+                    File file = new File("data.csv");
+                    String csv = file.getAbsolutePath();
+
+                    CSVWriter writer = new CSVWriter(new FileWriter(csv, true));
+
+                    String record = Float.toString(timeStamp_new)+"&"+Float.toString(Accel_x)+"&"+Float.toString(Accel_y)+"&"+
+                            Float.toString(Accel_z)+"&"+Float.toString(Gyro_x)+"&"+Float.toString(Gyro_y)+"&"+Float.toString(Gyro_z)+"&"+
+                            Float.toString(Mag_x)+"&"+Float.toString(Mag_y)+"&"+Float.toString(Mag_z)+"&"+Float.toString(Light_intensity);
+
+                    writer.writeNext(record).split("&");
+
+                    writer.close();
+
+
+                }
+
                 TextView gyro = (TextView) findViewById(R.id.textView);
-                gyro.setText("Accel_x: "+Accel_x+"\nAccel_y: "+Accel_y+"\nAccel_z: "+Accel_z
-                    +"\nGyro_x: "+Gyro_x+"\nGyro_y: "+Gyro_y+"\nGyro_z: "+Gyro_z+"\nMag_x: "+Mag_x+"\nMag_y: "+Mag_y+
-                    "\nMag_z: "+Mag_z+"\nLight: "+Light_intensity);
+                gyro.setText("Accel_x: " + Accel_x + "\nAccel_y: " + Accel_y + "\nAccel_z: " + Accel_z
+                        + "\nGyro_x: " + Gyro_x + "\nGyro_y: " + Gyro_y + "\nGyro_z: " + Gyro_z + "\nMag_x: " + Mag_x + "\nMag_y: " + Mag_y +
+                        "\nMag_z: " + Mag_z + "\nLight: " + Light_intensity);
             }
 
             @Override
             public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
 
             }
 
@@ -182,13 +228,23 @@ public class MainActivity extends ActionBarActivity {
     */
     public void generateCsvFile(String sFilename)
     {           //call this function onClick (start)
+
+        boolean alreadyExists = new File(sFilename).exists();
+
         try
         {
-            FileWriter writer = new FileWriter(sFilename);
+            if (!alreadyExists)
+            {
+                FileWriter writer = new FileWriter(sFilename);
+            }
+
             boolean i = true;
             // Need to fix this while loop with a button?
-            while(i) { //while !onClick(Stop)    race condition?
-                writer.append(Float.toString(timeStamp));
+
+                float timeStamp_new = System.currentTimeMillis() - timeStamp;
+
+
+                writer.append(Float.toString(timeStamp_new));
                 writer.append(',');
                 writer.append(Float.toString(Accel_x));
                 writer.append(',');
@@ -210,8 +266,6 @@ public class MainActivity extends ActionBarActivity {
                 writer.append(',');
                 writer.append(Float.toString(Light_intensity));
                 writer.append('\n');
-
-            }
 
             //generate whatever data you want
 
