@@ -23,10 +23,6 @@ import com.opencsv.CSVWriter;
 
 import static android.os.SystemClock.uptimeMillis;
 
-/* for writing to csv file */
-
-
-
 public class MainActivity extends ActionBarActivity {
 
     private SensorManager mSensorManager;
@@ -39,14 +35,15 @@ public class MainActivity extends ActionBarActivity {
     private float acceleration;
 
     //values to Calculate Number of Steps
-    private float previousZ;
-    private float currentZ;
-    private int numSteps;
+    private float previousZ = 13;
+    private float currentZ = 0;
+    private float previousY;
+    private float currentY;
+    private int numSteps = 0;
 
     // SeekBar Fields
     private SeekBar seekbar;
-    private int threshold;
-
+    private double threshold = 10;
 
     //values for csv file
     long timeStamp = System.currentTimeMillis();
@@ -60,18 +57,17 @@ public class MainActivity extends ActionBarActivity {
     float Mag_y = 0;
     float Mag_z = 0;
     float Light_intensity = 0;
-
-
+    int accel, gyro, mag, light = 0;
 
     @Override
     protected void onResume() {
         // Register a listener for each sensor.
         super.onResume();
 
-        mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_GAME);
-        mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE), SensorManager.SENSOR_DELAY_GAME);
-        mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD), SensorManager.SENSOR_DELAY_GAME);
-        mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT), SensorManager.SENSOR_DELAY_GAME);
+        mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_FASTEST);
+        mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE), SensorManager.SENSOR_DELAY_FASTEST);
+        mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD), SensorManager.SENSOR_DELAY_FASTEST);
+        mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT), SensorManager.SENSOR_DELAY_FASTEST);
     }
 
     @Override
@@ -87,10 +83,8 @@ public class MainActivity extends ActionBarActivity {
         setContentView(R.layout.activity_main);
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
 
-        threshold = 5;
-        previousZ = 0;
-        currentZ = 0;
-        numSteps = 0;
+
+
 
         //timeStamp = System.currentTimeMillis();     //time since system boot
 
@@ -103,58 +97,60 @@ public class MainActivity extends ActionBarActivity {
                     Accel_x = event.values[0];
                     Accel_y = event.values[1];
                     Accel_z = event.values[2];
-
-                    /*logic for pedometer -> # of steps */
+                    accel = 1;
 
                     /* fetch the current y */
                     currentZ = Accel_z;
-
-                    //Measure if a step is taken
-
-                    if ((currentZ - previousZ) > threshold){
-
-                        numSteps++;
-                    }
-
-                    // store previous y
-                    previousZ = currentZ;
+                    currentY = Accel_y;
 
                 }
                 if (sensor.getType() == Sensor.TYPE_GYROSCOPE) {
                     Gyro_x = event.values[0];
                     Gyro_y = event.values[1];
                     Gyro_z = event.values[2];
+                    gyro = 1;
                 }
                 if (sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
                     Mag_x = event.values[0];
                     Mag_y = event.values[1];
                     Mag_z = event.values[2];
+                    mag = 1;
                 }
                 if (sensor.getType() == Sensor.TYPE_LIGHT) {
+                    light = 1;
                     Light_intensity = event.values[0];
                 }
 
-                long timeStamp_new = System.currentTimeMillis() - timeStamp;
+                //Measure if a step is taken
+                if ((light == 1)&& (mag==1) && (gyro==1) && (accel == 1)){
+                    if ((currentZ > threshold) && (Math.abs(currentZ - previousZ) > 1.8)) {
+                        numSteps++;
+                    }
+                    previousZ = currentZ;
+                    light = 0;
+                    mag = 0;
+                    gyro = 0;
+                    accel = 0;
+                    long timeStamp_new = System.currentTimeMillis() - timeStamp;
+                    try
+                    {
+                        CSVWriter writer = new CSVWriter(new FileWriter(Environment.getExternalStorageDirectory().toString()+"/data.csv", true));
 
-                try
-                {
-                    CSVWriter writer = new CSVWriter(new FileWriter(Environment.getExternalStorageDirectory().toString()+"/data.csv", true));
+                        String[] record = new String [] { Float.toString(timeStamp_new), Float.toString(Accel_x), Float.toString(Accel_y),
+                                Float.toString(Accel_z), Float.toString(Gyro_x), Float.toString(Gyro_y), Float.toString(Gyro_z),
+                                Float.toString(Mag_x), Float.toString(Mag_y), Float.toString(Mag_z), Float.toString(Light_intensity) };
 
-                    String[] record = new String [] { Float.toString(timeStamp_new), Float.toString(Accel_x), Float.toString(Accel_y),
-                        Float.toString(Accel_z), Float.toString(Gyro_x), Float.toString(Gyro_y), Float.toString(Gyro_z),
-                        Float.toString(Mag_x), Float.toString(Mag_y), Float.toString(Mag_z), Float.toString(Light_intensity) };
+                        writer.writeNext(record);
+                        writer.close();
 
-                    writer.writeNext(record);
-                    writer.close();
-
-                } catch (IOException e) {
-                    e.printStackTrace();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    TextView gyro = (TextView) findViewById(R.id.textView);
+                    gyro.setText("Time_Stamp: "+timeStamp_new+"\nAccel_x: " + Accel_x + "\nAccel_y: " + Accel_y + "\nAccel_z: " + Accel_z
+                            + "\nGyro_x: " + Gyro_x + "\nGyro_y: " + Gyro_y + "\nGyro_z: " + Gyro_z + "\nMag_x: " + Mag_x + "\nMag_y: " + Mag_y +
+                            "\nMag_z: " + Mag_z + "\n\n\nLight: " + Light_intensity+"\nSteps: "+numSteps);
                 }
-
-                TextView gyro = (TextView) findViewById(R.id.textView);
-                gyro.setText("Time_Stamp: "+timeStamp_new+"\nAccel_x: " + Accel_x + "\nAccel_y: " + Accel_y + "\nAccel_z: " + Accel_z
-                        + "\nGyro_x: " + Gyro_x + "\nGyro_y: " + Gyro_y + "\nGyro_z: " + Gyro_z + "\nMag_x: " + Mag_x + "\nMag_y: " + Mag_y +
-                        "\nMag_z: " + Mag_z + "\n\n\nLight: " + Light_intensity+"\nSteps: "+numSteps);
             }
 
             @Override
@@ -187,7 +183,5 @@ public class MainActivity extends ActionBarActivity {
 
         return super.onOptionsItemSelected(item);
     }
-
-
 }
 
