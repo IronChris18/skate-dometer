@@ -13,6 +13,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.SeekBar;
+import android.widget.TextView;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -87,7 +88,8 @@ public class MainActivity extends ActionBarActivity {
         // This is what we found on the stack overflow, something is screwed up though, context might be incorrect
         //http://stackoverflow.com/questions/4343342/is-there-a-way-to-retrieve-multiple-sensor-data-in-android
 
-        timeStamp = uptimeMillis();     //time since system boot
+        //timeStamp = uptimeMillis();     //time since system boot
+
 
 
         //private inner class
@@ -126,12 +128,17 @@ public class MainActivity extends ActionBarActivity {
                 } if (sensor.getType() == Sensor.TYPE_LIGHT) {
                     Light_intensity = event.values[0];
                 }
+                TextView gyro = (TextView) findViewById(R.id.textView);
+                gyro.setText("Accel_x: "+Accel_x+"\nAccel_y: "+Accel_y+"\nAccel_z: "+Accel_z
+                    +"\nGyro_x: "+Gyro_x+"\nGyro_y: "+Gyro_y+"\nGyro_z: "+Gyro_z+"\nMag_x: "+Mag_x+"\nMag_y: "+Mag_y+
+                    "\nMag_z: "+Mag_z+"\nLight: "+Light_intensity);
             }
 
-            //@Override
-            //  public void onAccuracyChanged(Sensor arg0, int arg1) {
-                //
-            // }
+            @Override
+            public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
+            }
+
         };
 
         /*
@@ -171,10 +178,11 @@ public class MainActivity extends ActionBarActivity {
     protected void onResume() {
         // Register a listener for each sensor.
         super.onResume();
-        mSensorManager.registerListener((SensorEventListener) this, mLightSensor, SensorManager.SENSOR_DELAY_NORMAL);
-        mSensorManager.registerListener((SensorEventListener) this, mGyroSensor, SensorManager.SENSOR_DELAY_NORMAL);
-        mSensorManager.registerListener((SensorEventListener) this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
-        mSensorManager.registerListener((SensorEventListener) this, Magnetometer, SensorManager.SENSOR_DELAY_NORMAL);
+
+        mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_GAME);
+        mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE), SensorManager.SENSOR_DELAY_GAME);
+        mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD), SensorManager.SENSOR_DELAY_GAME);
+        mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT), SensorManager.SENSOR_DELAY_GAME);
     }
 
     @Override
