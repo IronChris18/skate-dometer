@@ -44,7 +44,7 @@ public class MainActivity extends ActionBarActivity {
     // SeekBar Fields
     private SeekBar seekbar;
     private double threshold = 11.5;
-    private double threshold_jump =20;
+    private double threshold_jump =18;
 
     //values for csv file
     long timeStamp = System.currentTimeMillis();
@@ -171,8 +171,9 @@ public class MainActivity extends ActionBarActivity {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
+                    numJumps /= 2;          //two peaks per jump
                     TextView gyro = (TextView) findViewById(R.id.textView);
-                    gyro.setText("Time_Stamp: "+timeStamp_new+"\nAccel_x: " + Accel_x + "\nAccel_y: " + Accel_y + "\nAccel_z: " + Accel_z+"Light: " + Light_intensity+"\nSteps: "+numSteps);
+                    gyro.setText("Time_Stamp: "+timeStamp_new+"\nAccel_x: " + Accel_x + "\nAccel_y: " + Accel_y + "\nAccel_z: " + Accel_z+"\n\n\n\n\nLight: " + Light_intensity+"\nSteps: "+numSteps+"\nJumps: "+numJumps);
                 }
             }
 /*
