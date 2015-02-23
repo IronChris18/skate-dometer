@@ -44,6 +44,7 @@ public class MainActivity extends ActionBarActivity {
     // SeekBar Fields
     private SeekBar seekbar;
     private double threshold = 11.5;
+    private double threshold_jump =20;
 
     //values for csv file
     long timeStamp = System.currentTimeMillis();
@@ -60,6 +61,9 @@ public class MainActivity extends ActionBarActivity {
     int accel, gyro, mag, light = 0;
     int pos_slope_flag = 0;
     long cur_time = 0;
+    int pos_slope_flag_jump = 0;
+    long cur_time_jump = 0;
+    int numJumps = 0;
 
     @Override
     protected void onResume() {
@@ -123,19 +127,10 @@ public class MainActivity extends ActionBarActivity {
                 }
 
 
-
-                if( current - previous > 0){
-                    positive_slope_flag = 1;
-                }
-                if( (current - previous < 0)  && positive_slope_flag){
-                    step++;
-                    positive_slope_flag = 0;
-                }
-
-
-
                 //Measure if a step is taken
                 if ((light == 1)&& (mag==1) && (gyro==1) && (accel == 1)){
+
+                    // step logic
                     if(currentZ - previousZ > 0) {
                         pos_slope_flag = 1;
                     }
@@ -145,6 +140,17 @@ public class MainActivity extends ActionBarActivity {
                         pos_slope_flag = 0;
                     }
                     previousZ = currentZ;
+
+                    // Jump logic
+                    if(currentY - previousY > 0) {
+                        pos_slope_flag_jump = 1;
+                    }
+                    if ((currentY > threshold_jump) && (pos_slope_flag_jump == 1) && (currentY - previousY < 0) && (System.currentTimeMillis() - cur_time_jump > 150)) {
+                        cur_time_jump = System.currentTimeMillis();
+                        numJumps++;
+                        pos_slope_flag_jump = 0;
+                    }
+                    previousY = currentY;
 
                     light = 0;
                     mag = 0;
