@@ -35,7 +35,7 @@ public class MainActivity extends ActionBarActivity {
     private float acceleration;
 
     //values to Calculate Number of Steps
-    private float previousZ = 13;
+    private float previousZ = 0;
     private float currentZ = 0;
     private float previousY;
     private float currentY;
@@ -120,6 +120,18 @@ public class MainActivity extends ActionBarActivity {
                     light = 1;
                     Light_intensity = event.values[0];
                 }
+
+
+
+                if( current - previous > 0){
+                    positive_slope_flag = 1;
+                }
+                if( (current - previous < 0)  && positive_slope_flag){
+                    step++;
+                    positive_slope_flag = 0;
+                }
+
+
 
                 //Measure if a step is taken
                 if ((light == 1)&& (mag==1) && (gyro==1) && (accel == 1)){
