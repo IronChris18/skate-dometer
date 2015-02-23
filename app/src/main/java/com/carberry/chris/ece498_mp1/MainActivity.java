@@ -43,7 +43,7 @@ public class MainActivity extends ActionBarActivity {
 
     // SeekBar Fields
     private SeekBar seekbar;
-    private double threshold = 10;
+    private double threshold = 11.5;
 
     //values for csv file
     long timeStamp = System.currentTimeMillis();
@@ -58,6 +58,8 @@ public class MainActivity extends ActionBarActivity {
     float Mag_z = 0;
     float Light_intensity = 0;
     int accel, gyro, mag, light = 0;
+    int pos_slope_flag = 0;
+    long cur_time = 0;
 
     @Override
     protected void onResume() {
@@ -93,7 +95,7 @@ public class MainActivity extends ActionBarActivity {
             @Override
             public void onSensorChanged(SensorEvent event) {
                 Sensor sensor = event.sensor;
-                if (sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+                if (sensor.getType() == Sensor.TYPE_ACCELEROMETER && accel != 1) {
                     Accel_x = event.values[0];
                     Accel_y = event.values[1];
                     Accel_z = event.values[2];
@@ -102,21 +104,20 @@ public class MainActivity extends ActionBarActivity {
                     /* fetch the current y */
                     currentZ = Accel_z;
                     currentY = Accel_y;
-
                 }
-                if (sensor.getType() == Sensor.TYPE_GYROSCOPE) {
+                if (sensor.getType() == Sensor.TYPE_GYROSCOPE && gyro != 1) {
                     Gyro_x = event.values[0];
                     Gyro_y = event.values[1];
                     Gyro_z = event.values[2];
                     gyro = 1;
                 }
-                if (sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
+                if (sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD && mag != 1) {
                     Mag_x = event.values[0];
                     Mag_y = event.values[1];
                     Mag_z = event.values[2];
                     mag = 1;
                 }
-                if (sensor.getType() == Sensor.TYPE_LIGHT) {
+                if (sensor.getType() == Sensor.TYPE_LIGHT && light != 1) {
                     light = 1;
                     Light_intensity = event.values[0];
                 }
@@ -135,10 +136,16 @@ public class MainActivity extends ActionBarActivity {
 
                 //Measure if a step is taken
                 if ((light == 1)&& (mag==1) && (gyro==1) && (accel == 1)){
-                    if ((currentZ > threshold) && (Math.abs(currentZ - previousZ) > 1.8)) {
+                    if(currentZ - previousZ > 0) {
+                        pos_slope_flag = 1;
+                    }
+                    if ((currentZ > threshold) && (pos_slope_flag == 1) && (currentZ - previousZ < 0) && (System.currentTimeMillis() - cur_time > 150)) {
+                        cur_time = System.currentTimeMillis();
                         numSteps++;
+                        pos_slope_flag = 0;
                     }
                     previousZ = currentZ;
+
                     light = 0;
                     mag = 0;
                     gyro = 0;
@@ -159,12 +166,17 @@ public class MainActivity extends ActionBarActivity {
                         e.printStackTrace();
                     }
                     TextView gyro = (TextView) findViewById(R.id.textView);
-                    gyro.setText("Time_Stamp: "+timeStamp_new+"\nAccel_x: " + Accel_x + "\nAccel_y: " + Accel_y + "\nAccel_z: " + Accel_z
-                            + "\nGyro_x: " + Gyro_x + "\nGyro_y: " + Gyro_y + "\nGyro_z: " + Gyro_z + "\nMag_x: " + Mag_x + "\nMag_y: " + Mag_y +
-                            "\nMag_z: " + Mag_z + "\n\n\nLight: " + Light_intensity+"\nSteps: "+numSteps);
+                    gyro.setText("Time_Stamp: "+timeStamp_new+"\nAccel_x: " + Accel_x + "\nAccel_y: " + Accel_y + "\nAccel_z: " + Accel_z+"Light: " + Light_intensity+"\nSteps: "+numSteps);
                 }
             }
+/*
 
+                            + "\nGyro_x: " + Gyro_x + "\nGyro_y: " + Gyro_y + "\nGyro_z: " + Gyro_z + "\nMag_x: " + Mag_x + "\nMag_y: " + Mag_y +
+                            "\nMag_z: " + Mag_z + "
+
+
+
+ */
             @Override
             public void onAccuracyChanged(Sensor sensor, int accuracy) {
                 //do nothing
