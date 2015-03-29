@@ -12,7 +12,6 @@ import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
@@ -31,8 +30,7 @@ public class MainActivity extends ActionBarActivity {
     // pedometer tutorial
     // http://nebomusic.net/androidlessons/Pedometer_Project.pdf
     //values for PEDOMETER/STEPS
-    private Button buttonReset;
-    private float acceleration;
+    //private float acceleration;
 
     //values to Calculate Number of Steps
     private float previousZ = 0;
@@ -40,11 +38,13 @@ public class MainActivity extends ActionBarActivity {
     private float previousY;
     private float currentY;
     private int numSteps = 0;
+    private int distance = 0;
+    private int stepLength = 2;
 
     // SeekBar Fields
     private SeekBar seekbar;
     private double threshold = 11.5;
-    private double threshold_jump =18;
+    private double threshold_jump =17;
 
     //values for csv file
     long timeStamp = System.currentTimeMillis();
@@ -64,6 +64,8 @@ public class MainActivity extends ActionBarActivity {
     int pos_slope_flag_jump = 0;
     long cur_time_jump = 0;
     int numJumps = 0;
+    int Rotation = 0;
+    int rotate_Flag = 0;
 
     @Override
     protected void onResume() {
@@ -79,8 +81,14 @@ public class MainActivity extends ActionBarActivity {
     @Override
     protected void onPause() {
         // important to unregister the sensor when the activity pauses.
+        //mSensorManager.unregisterListener((SensorEventListener) this);
+        mSensorManager.unregisterListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER));
+        mSensorManager.unregisterListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE));
+        mSensorManager.unregisterListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD));
+        mSensorManager.unregisterListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT));
+
         super.onPause();
-        mSensorManager.unregisterListener((SensorEventListener) this);
+
     }
 
     @Override
@@ -126,10 +134,8 @@ public class MainActivity extends ActionBarActivity {
                     Light_intensity = event.values[0];
                 }
 
-
                 //Measure if a step is taken
                 if ((light == 1)&& (mag==1) && (gyro==1) && (accel == 1)){
-
                     // step logic
                     if(currentZ - previousZ > 0) {
                         pos_slope_flag = 1;
@@ -139,51 +145,58 @@ public class MainActivity extends ActionBarActivity {
                         numSteps++;
                         pos_slope_flag = 0;
                     }
-                    previousZ = currentZ;
 
                     // Jump logic
-                    if(currentY - previousY > 0) {
+                    if(currentZ - previousZ > 0) {
                         pos_slope_flag_jump = 1;
                     }
-                    if ((currentY > threshold_jump) && (pos_slope_flag_jump == 1) && (currentY - previousY < 0) && (System.currentTimeMillis() - cur_time_jump > 150)) {
+                    if ((currentZ > threshold_jump) && (pos_slope_flag_jump == 1) && (currentZ - previousZ < 0) && (System.currentTimeMillis() - cur_time_jump > 800)) {
                         cur_time_jump = System.currentTimeMillis();
                         numJumps++;
                         pos_slope_flag_jump = 0;
                     }
-                    previousY = currentY;
+                    previousZ = currentZ;
+                    //previousY = currentY;
 
                     light = 0;
                     mag = 0;
                     gyro = 0;
                     accel = 0;
                     long timeStamp_new = System.currentTimeMillis() - timeStamp;
-                    try
-                    {
-                        CSVWriter writer = new CSVWriter(new FileWriter(Environment.getExternalStorageDirectory().toString()+"/data.csv", true));
+                    try {
+                        CSVWriter writer = new CSVWriter(new FileWriter(Environment.getExternalStorageDirectory().toString() + "/data.csv", true));
 
-                        String[] record = new String [] { Float.toString(timeStamp_new), Float.toString(Accel_x), Float.toString(Accel_y),
+                        String[] record = new String[]{Float.toString(timeStamp_new), Float.toString(Accel_x), Float.toString(Accel_y),
                                 Float.toString(Accel_z), Float.toString(Gyro_x), Float.toString(Gyro_y), Float.toString(Gyro_z),
-                                Float.toString(Mag_x), Float.toString(Mag_y), Float.toString(Mag_z), Float.toString(Light_intensity) };
+                                Float.toString(Mag_x), Float.toString(Mag_y), Float.toString(Mag_z), Float.toString(Light_intensity)};
 
                         writer.writeNext(record);
                         writer.close();
-
-                    } catch (IOException e) {
+                    }
+                    catch (IOException e) {
                         e.printStackTrace();
                     }
-                    numJumps /= 2;          //two peaks per jump
+
+                    distance = numSteps * stepLength;
+
+                    if(Gyro_z > -0.5){
+                        rotate_Flag = 1;
+                    }
+
+                    if((Gyro_z < -1.75) && (rotate_Flag == 1)){
+                        rotate_Flag = 0;
+                        Rotation += 90; //assume 90 degree turns only
+                    }
+
+
                     TextView gyro = (TextView) findViewById(R.id.textView);
-                    gyro.setText("Time_Stamp: "+timeStamp_new+"\nAccel_x: " + Accel_x + "\nAccel_y: " + Accel_y + "\nAccel_z: " + Accel_z+"\n\n\n\n\nLight: " + Light_intensity+"\nSteps: "+numSteps+"\nJumps: "+numJumps);
+                    gyro.setText("Time_Stamp: "+timeStamp_new+"\nAccel_x: " + Accel_x + "\nAccel_y: " + Accel_y + "\nAccel_z: "
+                            + Accel_z+ "\nGyro_x: " + Gyro_x + "\nGyro_y: " + Gyro_y + "\nGyro_z: " + Gyro_z + "\nMag_x: " + Mag_x + "\nMag_y: " + Mag_y +
+                            "\nMag_z: " + Mag_z + "\nLight: " + Light_intensity+"\nSteps: "+numSteps+"\nJumps: "+numJumps+
+                            "\nDistance: "+distance+"\nRotation: "+Rotation);
                 }
             }
-/*
 
-                            + "\nGyro_x: " + Gyro_x + "\nGyro_y: " + Gyro_y + "\nGyro_z: " + Gyro_z + "\nMag_x: " + Mag_x + "\nMag_y: " + Mag_y +
-                            "\nMag_z: " + Mag_z + "
-
-
-
- */
             @Override
             public void onAccuracyChanged(Sensor sensor, int accuracy) {
                 //do nothing
