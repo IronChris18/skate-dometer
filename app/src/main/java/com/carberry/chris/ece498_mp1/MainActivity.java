@@ -58,12 +58,14 @@ public class MainActivity extends ActionBarActivity {
     float Mag_y = 0;
     float Mag_z = 0;
     float Light_intensity = 0;
-    int accel, gyro, mag, light = 0;
+    int accel, gyro, mag, light, orientation = 0;
     int pos_slope_flag = 0;
     long cur_time = 0;
     int pos_slope_flag_jump = 0;
     long cur_time_jump = 0;
     int numJumps = 0;
+
+    float azimuth = 0;
 
     @Override
     protected void onResume() {
@@ -71,9 +73,10 @@ public class MainActivity extends ActionBarActivity {
         super.onResume();
 
         mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_FASTEST);
-        mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE), SensorManager.SENSOR_DELAY_FASTEST);
+        mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_GYRO   SCOPE), SensorManager.SENSOR_DELAY_FASTEST);
         mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD), SensorManager.SENSOR_DELAY_FASTEST);
         mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT), SensorManager.SENSOR_DELAY_FASTEST);
+
     }
 
     @Override
@@ -90,16 +93,22 @@ public class MainActivity extends ActionBarActivity {
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
 
 
-
-
-        //timeStamp = System.currentTimeMillis();     //time since system boot
-
         //private inner class
         mSensorListener = new SensorEventListener() {
+
+            float[] mGravity;
+            float[] mGeomagnetic;
+
+
             @Override
             public void onSensorChanged(SensorEvent event) {
                 Sensor sensor = event.sensor;
+
                 if (sensor.getType() == Sensor.TYPE_ACCELEROMETER && accel != 1) {
+
+                    //For the compass functionality
+                    mGravity = event.values;
+
                     Accel_x = event.values[0];
                     Accel_y = event.values[1];
                     Accel_z = event.values[2];
@@ -116,6 +125,10 @@ public class MainActivity extends ActionBarActivity {
                     gyro = 1;
                 }
                 if (sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD && mag != 1) {
+
+                    //for the compass functionality
+                    mGeomagnetic = event.values;
+
                     Mag_x = event.values[0];
                     Mag_y = event.values[1];
                     Mag_z = event.values[2];
@@ -125,6 +138,17 @@ public class MainActivity extends ActionBarActivity {
                     light = 1;
                     Light_intensity = event.values[0];
                 }
+                if (mGravity != null && mGeomagnetic != null) {
+                    float R[] = new float[9];
+                    float I[] = new float[9];
+                    boolean success = SensorManager.getRotationMatrix(R, I, mGravity, mGeomagnetic);
+                    if (success) {
+                        float orientation[] = new float[3];
+                        SensorManager.getOrientation(R, orientation);
+                        azimuth = orientation[0]; // orientation contains: azimuth, pitch and roll
+                    }
+                }
+
 
 
                 //Measure if a step is taken
@@ -173,7 +197,7 @@ public class MainActivity extends ActionBarActivity {
                     }
                     numJumps /= 2;          //two peaks per jump
                     TextView gyro = (TextView) findViewById(R.id.textView);
-                    gyro.setText("Time_Stamp: "+timeStamp_new+"\nAccel_x: " + Accel_x + "\nAccel_y: " + Accel_y + "\nAccel_z: " + Accel_z+"\n\n\n\n\nLight: " + Light_intensity+"\nSteps: "+numSteps+"\nJumps: "+numJumps);
+                    gyro.setText("Time_Stamp: "+timeStamp_new+"\nAccel_x: " + Accel_x + "\nAccel_y: " + Accel_y + "\nAccel_z: " + Accel_z+"\n\n\n\n\nLight: " + Light_intensity+"\nSteps: "+numSteps+"\nJumps: "+numJumps+"\nAzimuth:" + azimuth);
                 }
             }
 /*
