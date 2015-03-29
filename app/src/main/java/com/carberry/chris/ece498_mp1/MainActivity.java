@@ -66,6 +66,7 @@ public class MainActivity extends ActionBarActivity {
     int numJumps = 0;
     int Rotation = 0;
     int rotate_Flag = 0;
+    int rotate_Flag_pos = 0;
 
     @Override
     protected void onResume() {
@@ -182,9 +183,16 @@ public class MainActivity extends ActionBarActivity {
                     if(Gyro_z > -0.5){
                         rotate_Flag = 1;
                     }
+                    if(Gyro_z < 0.5){
+                        rotate_Flag_pos = 1;
+                    }
 
                     if((Gyro_z < -1.75) && (rotate_Flag == 1)){
                         rotate_Flag = 0;
+                        Rotation += 90; //assume 90 degree turns only
+                    }
+                    if((Gyro_z > 1.75) && (rotate_Flag_pos == 1)){
+                        rotate_Flag_pos = 0;
                         Rotation += 90; //assume 90 degree turns only
                     }
 
