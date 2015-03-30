@@ -77,7 +77,8 @@ public class MainActivity extends ActionBarActivity {
     int rotate_Flag = 0;
     int rotate_Flag_pos = 0;
 
-    float azimuth = 0;
+    float azimuthInRadians = 0;
+    float azimuthInDegrees = 0;
     float degrees_per_sec = 0;
     float Gyro_timestamp = 0;
     float current_timestamp = 0;
@@ -178,7 +179,11 @@ public class MainActivity extends ActionBarActivity {
                     if (success) {
                         float orientation[] = new float[3];
                         SensorManager.getOrientation(R, orientation);
-                        azimuth = orientation[0]; // orientation contains: azimuth, pitch and roll
+                        azimuthInRadians = orientation[0]; // orientation contains: azimuth, pitch and roll
+                        float azimuthInDegrees = (float)Math.toDegrees(azimuthInRadians);
+                        if (azimuthInDegrees < 0.0f) {
+                            azimuthInDegrees += 360.0f;
+                        }
                     }
                 }
 
@@ -217,7 +222,7 @@ public class MainActivity extends ActionBarActivity {
 
                         String[] record = new String[]{Float.toString(timeStamp_new), Float.toString(Accel_x), Float.toString(Accel_y),
                                 Float.toString(Accel_z), Float.toString(Gyro_x), Float.toString(Gyro_y), Float.toString(Gyro_z),
-                                Float.toString(Mag_x), Float.toString(Mag_y), Float.toString(Mag_z), Float.toString(Light_intensity), Float.toString(azimuth)};
+                                Float.toString(Mag_x), Float.toString(Mag_y), Float.toString(Mag_z), Float.toString(Light_intensity), Float.toString(azimuthInDegrees)};
 
                         writer.writeNext(record);
                         writer.close();
