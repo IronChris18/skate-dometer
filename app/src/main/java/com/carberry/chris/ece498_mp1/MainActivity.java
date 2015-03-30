@@ -14,6 +14,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.os.SystemClock;
 
 import java.io.*;
 import java.io.IOException;
@@ -69,6 +70,11 @@ public class MainActivity extends ActionBarActivity {
     int rotate_Flag_pos = 0;
 
     float azimuth = 0;
+    float degrees_per_sec = 0;
+    float Gyro_timestamp = 0;
+    float current_timestamp = 0;
+    float NS2S = 1.0f / 1000000000.0f;
+    float angular_distance_traveled = 0;
 
     @Override
     protected void onResume() {
@@ -76,7 +82,7 @@ public class MainActivity extends ActionBarActivity {
         super.onResume();
 
         mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_FASTEST);
-        mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_GYRO   SCOPE), SensorManager.SENSOR_DELAY_FASTEST);
+        mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE), SensorManager.SENSOR_DELAY_FASTEST);
         mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD), SensorManager.SENSOR_DELAY_FASTEST);
         mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT), SensorManager.SENSOR_DELAY_FASTEST);
 
@@ -128,6 +134,7 @@ public class MainActivity extends ActionBarActivity {
                     currentY = Accel_y;
                 }
                 if (sensor.getType() == Sensor.TYPE_GYROSCOPE && gyro != 1) {
+                    Gyro_timestamp = event.timestamp;
                     Gyro_x = event.values[0];
                     Gyro_y = event.values[1];
                     Gyro_z = event.values[2];
@@ -148,7 +155,14 @@ public class MainActivity extends ActionBarActivity {
                     Light_intensity = event.values[0];
                 }
 
-                //COMPASS DATA COLLECTION
+                /*
+                 * COMPASS DATA COLLECTION
+                 *      a north based azimuth gives the number of degrees from north, the degrees can be seen at
+                 *      0 degrees = NORTH
+                 *      90 degrees = EAST
+                 *      180 " = SOUTH
+                 *      270 " = WEST
+                 */
                 if (mGravity != null && mGeomagnetic != null) {
                     float R[] = new float[9];
                     float I[] = new float[9];
@@ -207,6 +221,17 @@ public class MainActivity extends ActionBarActivity {
                     numJumps /= 2;          //two peaks per jump
 
                     distance = numSteps * stepLength;
+
+                    /*
+                      current_timestamp = System.elapsedRealtimeNanos();
+
+                      //gyroscope gives data in radians per second
+                      degrees_per_sec = Gyro_z * 57.2958;
+                      dT = (current_timestamp - Gyro_timestamp) * NS2S;
+
+                      angular_distance_traveled += dT * degrees_per_sec;
+                     */
+
 
                     if(Gyro_z > -0.5){
                         rotate_Flag = 1;
