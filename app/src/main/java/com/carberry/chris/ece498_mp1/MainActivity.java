@@ -166,7 +166,7 @@ public class MainActivity extends ActionBarActivity {
                 /*
                  * COMPASS DATA COLLECTION
                  *      a north based azimuth gives the number of degrees from north, the degrees can be seen at
-                 *      0 degrees = NORTH
+                 *      0 or 360 degrees = NORTH
                  *      90 degrees = EAST
                  *      180 " = SOUTH
                  *      270 " = WEST
