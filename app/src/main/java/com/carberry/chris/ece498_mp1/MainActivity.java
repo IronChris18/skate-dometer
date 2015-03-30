@@ -16,6 +16,14 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.os.SystemClock;
 
+// http://developer.android.com/guide/topics/media/audio-capture.html
+// Do they want this put in an mp3 file or something? What do they want in CSV?
+import android.media.MediaRecorder;
+
+// WIFI STUFF, what info do they want in the CSV?
+// http://developer.android.com/reference/android/net/wifi/WifiManager.html
+// import android.net.wifi.WifiManager
+
 import java.io.*;
 import java.io.IOException;
 
@@ -209,7 +217,7 @@ public class MainActivity extends ActionBarActivity {
 
                         String[] record = new String[]{Float.toString(timeStamp_new), Float.toString(Accel_x), Float.toString(Accel_y),
                                 Float.toString(Accel_z), Float.toString(Gyro_x), Float.toString(Gyro_y), Float.toString(Gyro_z),
-                                Float.toString(Mag_x), Float.toString(Mag_y), Float.toString(Mag_z), Float.toString(Light_intensity)};
+                                Float.toString(Mag_x), Float.toString(Mag_y), Float.toString(Mag_z), Float.toString(Light_intensity), Float.toString(azimuth)};
 
                         writer.writeNext(record);
                         writer.close();
@@ -218,11 +226,12 @@ public class MainActivity extends ActionBarActivity {
                         e.printStackTrace();
                     }
 
-                    numJumps /= 2;          //two peaks per jump
+                    numJumps /= 2; //two peaks per jump
 
                     distance = numSteps * stepLength;
 
-                    /*
+                    /*// FOR TOTAL DEGREES ROTATED
+
                       current_timestamp = System.elapsedRealtimeNanos();
 
                       //gyroscope gives data in radians per second
