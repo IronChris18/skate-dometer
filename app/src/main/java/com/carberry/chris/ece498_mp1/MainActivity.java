@@ -36,7 +36,7 @@ public class MainActivity extends ActionBarActivity {
 
     private SensorManager mSensorManager;
     private SensorEventListener mSensorListener;
-    //MediaRecorder recorder = new MediaRecorder();
+
     // pedometer tutorial
     // http://nebomusic.net/androidlessons/Pedometer_Project.pdf
     //values for PEDOMETER/STEPS
@@ -87,28 +87,30 @@ public class MainActivity extends ActionBarActivity {
     float dT = 0;
     float NS2S = 1.0f / 1000000000.0f;
     float angular_distance_traveled = 0;
+    float MaxAmp = 1.0f;
     WifiManager mainWifiObj;
+    MediaRecorder recorder = new MediaRecorder();
 
     @Override
     protected void onResume() {
         // Register a listener for each sensor.
         super.onResume();
-        /*try {
-        recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-
-        recorder.prepare();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        recorder.start();   // Recording is now started
-        */
-
 
         mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_FASTEST);
         mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE), SensorManager.SENSOR_DELAY_FASTEST);
         mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD), SensorManager.SENSOR_DELAY_FASTEST);
         mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT), SensorManager.SENSOR_DELAY_FASTEST);
-
+        try {
+            recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+            recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+            recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+            recorder.setOutputFile(Environment.getExternalStorageDirectory().toString() + "/dev");
+            recorder.prepare();
+            recorder.start();   // Recording is now started
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -119,11 +121,10 @@ public class MainActivity extends ActionBarActivity {
         mSensorManager.unregisterListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE));
         mSensorManager.unregisterListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD));
         mSensorManager.unregisterListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT));
-        //recorder.stop();
-        //recorder.reset();   // You can reuse the object by going back to setAudioSource() step
-        //recorder.release(); // Now the object cannot be reused
+        recorder.stop();
+        recorder.reset();   // You can reuse the object by going back to setAudioSource() step
+        recorder.release(); // Now the object cannot be reused
         super.onPause();
-
     }
 
     @Override
@@ -138,7 +139,6 @@ public class MainActivity extends ActionBarActivity {
 
             float[] mGravity;
             float[] mGeomagnetic;
-
 
             @Override
             public void onSensorChanged(SensorEvent event) {
@@ -238,6 +238,8 @@ public class MainActivity extends ActionBarActivity {
                     WifiInfo wifiInfo = mainWifiObj.getConnectionInfo();
                     level=WifiManager.calculateSignalLevel(wifiInfo.getRssi(), numberOfLevels);
 
+                    MaxAmp = recorder.getMaxAmplitude();
+
                     long timeStamp_new = System.currentTimeMillis() - timeStamp;
                     try {
                         CSVWriter writer = new CSVWriter(new FileWriter(Environment.getExternalStorageDirectory().toString() + "/data.csv", true));
@@ -245,7 +247,7 @@ public class MainActivity extends ActionBarActivity {
                         String[] record = new String[]{Float.toString(timeStamp_new), Float.toString(Accel_x), Float.toString(Accel_y),
                                 Float.toString(Accel_z), Float.toString(Gyro_x), Float.toString(Gyro_y), Float.toString(Gyro_z),
                                 Float.toString(Mag_x), Float.toString(Mag_y), Float.toString(Mag_z), Float.toString(Light_intensity), Float.toString(azimuthInDegrees),
-                                Float.toString(level)};
+                                Float.toString(level), Float.toString(MaxAmp)};
 
                         writer.writeNext(record);
                         writer.close();
@@ -311,7 +313,7 @@ public class MainActivity extends ActionBarActivity {
                     gyro.setText("Time_Stamp: "+timeStamp_new+"\nAccel_x: " + Accel_x + "\nAccel_y: " + Accel_y + "\nAccel_z: "
                             + Accel_z+ "\nGyro_x: " + Gyro_x + "\nGyro_y: " + Gyro_y + "\nGyro_z: " + Gyro_z + "\nMag_x: " + Mag_x + "\nMag_y: " + Mag_y +
                             "\nMag_z: " + Mag_z + "\nLight: " + Light_intensity+"\nSteps: "+numSteps+"\nJumps: "+numJumps+
-                            "\nDistance: "+distance+"\nRotation: "+Rotation+"\nAzimuth: "+azimuthInDegrees+"\nWIFI strength: "+ level);
+                            "\nDistance: "+distance+"\nRotation: "+Rotation+"\nAzimuth: "+azimuthInDegrees+"\nWIFI strength: "+ level+"\nMaxAmp: "+MaxAmp);
                 }
             }
 
