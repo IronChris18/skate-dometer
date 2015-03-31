@@ -23,7 +23,7 @@ import android.media.MediaRecorder;
 
 // WIFI STUFF, what info do they want in the CSV?
 // http://developer.android.com/reference/android/net/wifi/WifiManager.html
-import android.net.wifi.WifiManager
+import android.net.wifi.WifiManager;
 
 import java.io.*;
 import java.io.IOException;
