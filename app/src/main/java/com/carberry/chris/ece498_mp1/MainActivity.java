@@ -220,6 +220,7 @@ public class MainActivity extends ActionBarActivity {
                     gyro = 0;
                     accel = 0;
                     long timeStamp_new = System.currentTimeMillis() - timeStamp;
+
                     try {
                         CSVWriter writer = new CSVWriter(new FileWriter(Environment.getExternalStorageDirectory().toString() + "/data.csv", true));
 
