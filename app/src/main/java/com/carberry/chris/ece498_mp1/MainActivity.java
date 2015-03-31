@@ -16,6 +16,7 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.os.SystemClock;
 import android.net.wifi.WifiInfo;
+import java.util.*;
 
 // http://developer.android.com/guide/topics/media/audio-capture.html
 // Do they want this put in an mp3 file or something? What do they want in CSV?
@@ -90,6 +91,10 @@ public class MainActivity extends ActionBarActivity {
     float MaxAmp = 1.0f;
     WifiManager mainWifiObj;
     MediaRecorder recorder = new MediaRecorder();
+    ArrayList angular_velocities = new ArrayList();
+    float timer_duration;
+    float avg_velocity;
+    float
 
     @Override
     protected void onResume() {
@@ -159,7 +164,7 @@ public class MainActivity extends ActionBarActivity {
                     currentY = Accel_y;
                 }
                 if (sensor.getType() == Sensor.TYPE_GYROSCOPE && gyro != 1) {
-                    //Gyro_timestamp = event.timestamp;       //nanoseconds
+                    Gyro_timestamp = event.timestamp;       //nanoseconds
                     Gyro_x = event.values[0];
                     Gyro_y = event.values[1];
                     Gyro_z = event.values[2];
@@ -261,17 +266,40 @@ public class MainActivity extends ActionBarActivity {
 
                     distance = numSteps * stepLength;
 
- /*                   // FOR TOTAL DEGREES ROTATED
 
-                      current_timestamp = System.currentTimeMillis();
-                      current_timestamp *= 1000;
 
-                      //gyroscope gives data in radians per second
-                      degrees_per_sec = (float)Math.toDegrees(Gyro_z);
-                      dT = (current_timestamp - Gyro_timestamp) * NS2S;
+                    /* ANGULAR DISPLACEMENT
+                    if(Gyro_z > 0.5 || Gyro_z < -0.5)
+                    {
+                        angular_velocity.add(Gyro_Z);
+                        if(angular_velocity.size() == 1)
+                        {
+                            timer_start = System.currentTimeMillis();
+                        }
 
-                      angular_distance_traveled += dT * degrees_per_sec;
-*/
+                    }
+                    else
+                    {
+                        time_duration = Syste.currentTImeMillis() - timer_start;
+
+                        if(angular_velocity.size() != 0){
+                            for(i=0; i < angular_velocity.size();++)
+                            {
+                                sum_of_velocities += angular_velocity[i];
+                            }
+                            avg_velocity = sum_of_velocities / angular_velocity.size();
+                            angular_velocity.clear()
+                            avg_velocity = (float)Math.toDegrees(avg_velocity);
+
+
+                        }
+
+                        Rotation += avg_velocity * time_duration;
+
+                    }
+                    */
+
+
 
 
                     if(Gyro_z > -0.5){
@@ -286,27 +314,11 @@ public class MainActivity extends ActionBarActivity {
                     if((Gyro_z < -1.75) && (rotate_Flag == 1)){
                         rotate_Flag = 0;
 
-                        /*current_timestamp = System.currentTimeMillis();
-                        current_timestamp *= 1000;
-                        //gyroscope gives data in radians per second
-                        degrees_per_sec = (float)Math.toDegrees(Gyro_z);
-                        dT = (current_timestamp - Gyro_timestamp) * NS2S;
-
-                        angular_distance_traveled = dT * degrees_per_sec;
-                        */
                         Rotation += 90;//angular_distance_traveled; //assume 90 degree turns only
                     }
                     if((Gyro_z > 1.75) && (rotate_Flag_pos == 1)){
                         rotate_Flag_pos = 0;
-                        /*current_timestamp = System.currentTimeMillis();
-                        current_timestamp *= 1000;
 
-                        //gyroscope gives data in radians per second
-                        degrees_per_sec = (float)Math.toDegrees(Gyro_z);
-                        dT = (current_timestamp - Gyro_timestamp) * NS2S;
-
-                        angular_distance_traveled = dT * degrees_per_sec;
-                        */
                         Rotation += 90;//angular_distance_traveled; //assume 90 degree turns only
                     }
 
