@@ -36,7 +36,7 @@ public class MainActivity extends ActionBarActivity {
 
     private SensorManager mSensorManager;
     private SensorEventListener mSensorListener;
-
+    //MediaRecorder recorder = new MediaRecorder();
     // pedometer tutorial
     // http://nebomusic.net/androidlessons/Pedometer_Project.pdf
     //values for PEDOMETER/STEPS
@@ -77,12 +77,14 @@ public class MainActivity extends ActionBarActivity {
     int Rotation = 0;
     int rotate_Flag = 0;
     int rotate_Flag_pos = 0;
+    int level = 0;
 
     float azimuthInRadians = 0;
     float azimuthInDegrees = 0;
     float degrees_per_sec = 0;
     float Gyro_timestamp = 0;
     float current_timestamp = 0;
+    float dT = 0;
     float NS2S = 1.0f / 1000000000.0f;
     float angular_distance_traveled = 0;
     WifiManager mainWifiObj;
@@ -91,6 +93,16 @@ public class MainActivity extends ActionBarActivity {
     protected void onResume() {
         // Register a listener for each sensor.
         super.onResume();
+        /*try {
+        recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+
+        recorder.prepare();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        recorder.start();   // Recording is now started
+        */
+
 
         mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_FASTEST);
         mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE), SensorManager.SENSOR_DELAY_FASTEST);
@@ -107,7 +119,9 @@ public class MainActivity extends ActionBarActivity {
         mSensorManager.unregisterListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE));
         mSensorManager.unregisterListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD));
         mSensorManager.unregisterListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT));
-
+        //recorder.stop();
+        //recorder.reset();   // You can reuse the object by going back to setAudioSource() step
+        //recorder.release(); // Now the object cannot be reused
         super.onPause();
 
     }
@@ -118,7 +132,6 @@ public class MainActivity extends ActionBarActivity {
         setContentView(R.layout.activity_main);
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         mainWifiObj = (WifiManager) getSystemService(Context.WIFI_SERVICE);
-
 
         //private inner class
         mSensorListener = new SensorEventListener() {
@@ -146,7 +159,7 @@ public class MainActivity extends ActionBarActivity {
                     currentY = Accel_y;
                 }
                 if (sensor.getType() == Sensor.TYPE_GYROSCOPE && gyro != 1) {
-                    Gyro_timestamp = event.timestamp;
+                    //Gyro_timestamp = event.timestamp;       //nanoseconds
                     Gyro_x = event.values[0];
                     Gyro_y = event.values[1];
                     Gyro_z = event.values[2];
@@ -170,7 +183,7 @@ public class MainActivity extends ActionBarActivity {
                 /*
                  * COMPASS DATA COLLECTION
                  *      a north based azimuth gives the number of degrees from north, the degrees can be seen at
-                 *      0 degrees = NORTH
+                 *      0 or 360 degrees = NORTH
                  *      90 degrees = EAST
                  *      180 " = SOUTH
                  *      270 " = WEST
@@ -219,6 +232,12 @@ public class MainActivity extends ActionBarActivity {
                     mag = 0;
                     gyro = 0;
                     accel = 0;
+
+                    //WiFi
+                    int numberOfLevels=5;
+                    WifiInfo wifiInfo = mainWifiObj.getConnectionInfo();
+                    level=WifiManager.calculateSignalLevel(wifiInfo.getRssi(), numberOfLevels);
+
                     long timeStamp_new = System.currentTimeMillis() - timeStamp;
 
                     try {
@@ -226,7 +245,8 @@ public class MainActivity extends ActionBarActivity {
 
                         String[] record = new String[]{Float.toString(timeStamp_new), Float.toString(Accel_x), Float.toString(Accel_y),
                                 Float.toString(Accel_z), Float.toString(Gyro_x), Float.toString(Gyro_y), Float.toString(Gyro_z),
-                                Float.toString(Mag_x), Float.toString(Mag_y), Float.toString(Mag_z), Float.toString(Light_intensity), Float.toString(azimuthInDegrees)};
+                                Float.toString(Mag_x), Float.toString(Mag_y), Float.toString(Mag_z), Float.toString(Light_intensity), Float.toString(azimuthInDegrees),
+                                Float.toString(level)};
 
                         writer.writeNext(record);
                         writer.close();
@@ -239,42 +259,54 @@ public class MainActivity extends ActionBarActivity {
 
                     distance = numSteps * stepLength;
 
-                    /*// FOR TOTAL DEGREES ROTATED
+ /*                   // FOR TOTAL DEGREES ROTATED
 
-                      current_timestamp = System.elapsedRealtimeNanos();
+                      current_timestamp = System.currentTimeMillis();
+                      current_timestamp *= 1000;
 
                       //gyroscope gives data in radians per second
-                      degrees_per_sec = Gyro_z * 57.2958;
+                      degrees_per_sec = (float)Math.toDegrees(Gyro_z);
                       dT = (current_timestamp - Gyro_timestamp) * NS2S;
 
                       angular_distance_traveled += dT * degrees_per_sec;
-                     */
+*/
 
 
                     if(Gyro_z > -0.5){
+                        //Gyro_timestamp = event.timestamp;
                         rotate_Flag = 1;
                     }
                     if(Gyro_z < 0.5){
+                        //Gyro_timestamp = event.timestamp;
                         rotate_Flag_pos = 1;
                     }
 
                     if((Gyro_z < -1.75) && (rotate_Flag == 1)){
                         rotate_Flag = 0;
-                        Rotation += 90; //assume 90 degree turns only
+
+                        /*current_timestamp = System.currentTimeMillis();
+                        current_timestamp *= 1000;
+                        //gyroscope gives data in radians per second
+                        degrees_per_sec = (float)Math.toDegrees(Gyro_z);
+                        dT = (current_timestamp - Gyro_timestamp) * NS2S;
+
+                        angular_distance_traveled = dT * degrees_per_sec;
+                        */
+                        Rotation += 90;//angular_distance_traveled; //assume 90 degree turns only
                     }
                     if((Gyro_z > 1.75) && (rotate_Flag_pos == 1)){
                         rotate_Flag_pos = 0;
-                        Rotation += 90; //assume 90 degree turns only
+                        /*current_timestamp = System.currentTimeMillis();
+                        current_timestamp *= 1000;
+
+                        //gyroscope gives data in radians per second
+                        degrees_per_sec = (float)Math.toDegrees(Gyro_z);
+                        dT = (current_timestamp - Gyro_timestamp) * NS2S;
+
+                        angular_distance_traveled = dT * degrees_per_sec;
+                        */
+                        Rotation += 90;//angular_distance_traveled; //assume 90 degree turns only
                     }
-
-
-                    /* WIFI DATA
-                     *
-                     */
-                    int numberOfLevels=5;
-                    WifiInfo wifiInfo = mainWifiObj.getConnectionInfo();
-                    int level=WifiManager.calculateSignalLevel(wifiInfo.getRssi(), numberOfLevels);
-
 
                     TextView gyro = (TextView) findViewById(R.id.textView);
                     gyro.setText("Time_Stamp: "+timeStamp_new+"\nAccel_x: " + Accel_x + "\nAccel_y: " + Accel_y + "\nAccel_z: "
