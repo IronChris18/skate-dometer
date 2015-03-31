@@ -226,7 +226,6 @@ public class MainActivity extends ActionBarActivity {
                         pos_slope_flag_jump = 0;
                     }
                     previousZ = currentZ;
-                    //previousY = currentY;
 
                     light = 0;
                     mag = 0;
@@ -293,15 +292,6 @@ public class MainActivity extends ActionBarActivity {
                         //Rotation += 90;//angular_distance_traveled; //assume 90 degree turns only
                     }
 
-                    if (rotate_Flag_pos == 2){
-                        
-                    }
-                    if((Gyro_z < 1.75) && (rotate_Flag_pos == 2)) {
-                        Gyro_timestamp = System.currentTimeMillis();
-                        degrees_per_sec = (float)Math.toDegrees(Gyro_z);
-                        dT = (Gyro_timestamp - current_timestamp) * NS2S;
-
-                    }
                     TextView gyro = (TextView) findViewById(R.id.textView);
                     gyro.setText("Time_Stamp: "+timeStamp_new+"\nAccel_x: " + Accel_x + "\nAccel_y: " + Accel_y + "\nAccel_z: "
                             + Accel_z+ "\nGyro_x: " + Gyro_x + "\nGyro_y: " + Gyro_y + "\nGyro_z: " + Gyro_z + "\nMag_x: " + Mag_x + "\nMag_y: " + Mag_y +
