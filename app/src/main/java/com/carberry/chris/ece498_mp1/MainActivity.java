@@ -36,7 +36,7 @@ public class MainActivity extends ActionBarActivity {
 
     private SensorManager mSensorManager;
     private SensorEventListener mSensorListener;
-    MediaRecorder recorder = new MediaRecorder();
+    //MediaRecorder recorder = new MediaRecorder();
     // pedometer tutorial
     // http://nebomusic.net/androidlessons/Pedometer_Project.pdf
     //values for PEDOMETER/STEPS
@@ -77,6 +77,7 @@ public class MainActivity extends ActionBarActivity {
     int Rotation = 0;
     int rotate_Flag = 0;
     int rotate_Flag_pos = 0;
+    int level = 0;
 
     float azimuthInRadians = 0;
     float azimuthInDegrees = 0;
@@ -92,7 +93,7 @@ public class MainActivity extends ActionBarActivity {
     protected void onResume() {
         // Register a listener for each sensor.
         super.onResume();
-        try {
+        /*try {
         recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
 
         recorder.prepare();
@@ -100,6 +101,7 @@ public class MainActivity extends ActionBarActivity {
             e.printStackTrace();
         }
         recorder.start();   // Recording is now started
+        */
 
 
         mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_FASTEST);
@@ -117,9 +119,9 @@ public class MainActivity extends ActionBarActivity {
         mSensorManager.unregisterListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE));
         mSensorManager.unregisterListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD));
         mSensorManager.unregisterListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT));
-        recorder.stop();
-        recorder.reset();   // You can reuse the object by going back to setAudioSource() step
-        recorder.release(); // Now the object cannot be reused
+        //recorder.stop();
+        //recorder.reset();   // You can reuse the object by going back to setAudioSource() step
+        //recorder.release(); // Now the object cannot be reused
         super.onPause();
 
     }
@@ -130,7 +132,6 @@ public class MainActivity extends ActionBarActivity {
         setContentView(R.layout.activity_main);
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         mainWifiObj = (WifiManager) getSystemService(Context.WIFI_SERVICE);
-
 
         //private inner class
         mSensorListener = new SensorEventListener() {
@@ -231,13 +232,20 @@ public class MainActivity extends ActionBarActivity {
                     mag = 0;
                     gyro = 0;
                     accel = 0;
+
+                    //WiFi
+                    int numberOfLevels=5;
+                    WifiInfo wifiInfo = mainWifiObj.getConnectionInfo();
+                    level=WifiManager.calculateSignalLevel(wifiInfo.getRssi(), numberOfLevels);
+
                     long timeStamp_new = System.currentTimeMillis() - timeStamp;
                     try {
                         CSVWriter writer = new CSVWriter(new FileWriter(Environment.getExternalStorageDirectory().toString() + "/data.csv", true));
 
                         String[] record = new String[]{Float.toString(timeStamp_new), Float.toString(Accel_x), Float.toString(Accel_y),
                                 Float.toString(Accel_z), Float.toString(Gyro_x), Float.toString(Gyro_y), Float.toString(Gyro_z),
-                                Float.toString(Mag_x), Float.toString(Mag_y), Float.toString(Mag_z), Float.toString(Light_intensity), Float.toString(azimuthInDegrees)};
+                                Float.toString(Mag_x), Float.toString(Mag_y), Float.toString(Mag_z), Float.toString(Light_intensity), Float.toString(azimuthInDegrees),
+                                Float.toString(level)};
 
                         writer.writeNext(record);
                         writer.close();
@@ -298,15 +306,6 @@ public class MainActivity extends ActionBarActivity {
                         */
                         Rotation += 90;//angular_distance_traveled; //assume 90 degree turns only
                     }
-
-
-                    /* WIFI DATA
-                     *
-                     */
-                    int numberOfLevels=5;
-                    WifiInfo wifiInfo = mainWifiObj.getConnectionInfo();
-                    int level=WifiManager.calculateSignalLevel(wifiInfo.getRssi(), numberOfLevels);
-
 
                     TextView gyro = (TextView) findViewById(R.id.textView);
                     gyro.setText("Time_Stamp: "+timeStamp_new+"\nAccel_x: " + Accel_x + "\nAccel_y: " + Accel_y + "\nAccel_z: "
