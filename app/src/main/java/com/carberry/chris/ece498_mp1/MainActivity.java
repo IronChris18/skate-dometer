@@ -269,8 +269,16 @@ public class MainActivity extends ActionBarActivity {
 
 
                     /* ANGULAR DISPLACEMENT
+                     *
+                     * If we reach the threshold, then we begin our timer (timer_start), we keep adding
+                     * to the dynamic array of gyro values as long as we stay above the threshold, if we
+                     * dip below the threshold (aka: stop turning) then we
+                     * go into the "else" statement, Then we take the avg of the gyro values
+                     * and multiply by the time duration and add to the total rotation
+                     * /
+                    /*
                     if(Gyro_z > 0.5 || Gyro_z < -0.5)
-                    {
+                    {s
                         angular_velocity.add(Gyro_Z);
                         if(angular_velocity.size() == 1)
                         {
@@ -280,7 +288,7 @@ public class MainActivity extends ActionBarActivity {
                     }
                     else
                     {
-                        time_duration = Syste.currentTImeMillis() - timer_start;
+                        time_duration = System.currentTImeMillis() - timer_start;
 
                         if(angular_velocity.size() != 0){
                             for(i=0; i < angular_velocity.size();++)
@@ -290,8 +298,6 @@ public class MainActivity extends ActionBarActivity {
                             avg_velocity = sum_of_velocities / angular_velocity.size();
                             angular_velocity.clear()
                             avg_velocity = (float)Math.toDegrees(avg_velocity);
-
-
                         }
 
                         Rotation += avg_velocity * time_duration;
