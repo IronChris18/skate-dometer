@@ -16,6 +16,7 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.os.SystemClock;
 import android.net.wifi.WifiInfo;
+import java.util.*;
 
 // http://developer.android.com/guide/topics/media/audio-capture.html
 // Do they want this put in an mp3 file or something? What do they want in CSV?
@@ -90,6 +91,11 @@ public class MainActivity extends ActionBarActivity {
     float MaxAmp = 1.0f;
     WifiManager mainWifiObj;
     MediaRecorder recorder = new MediaRecorder();
+    ArrayList angular_velocity = new ArrayList();
+    float time_duration;
+    float timer_start;
+    float avg_velocity;
+    float sum_of_velocities;
 
     @Override
     protected void onResume() {
@@ -240,6 +246,7 @@ public class MainActivity extends ActionBarActivity {
                     MaxAmp = recorder.getMaxAmplitude();
 
                     long timeStamp_new = System.currentTimeMillis() - timeStamp;
+
                     try {
                         CSVWriter writer = new CSVWriter(new FileWriter(Environment.getExternalStorageDirectory().toString() + "/data.csv", true));
 
@@ -259,19 +266,48 @@ public class MainActivity extends ActionBarActivity {
 
                     distance = numSteps * stepLength;
 
- /*                   // FOR TOTAL DEGREES ROTATED
-
-                      current_timestamp = System.currentTimeMillis();
-                      current_timestamp *= 1000;
-
-                      //gyroscope gives data in radians per second
-                      degrees_per_sec = (float)Math.toDegrees(Gyro_z);
-                      dT = (current_timestamp - Gyro_timestamp) * NS2S;
-
-                      angular_distance_traveled += dT * degrees_per_sec;
-*/
 
 
+                    /* ANGULAR DISPLACEMENT
+                     *
+                     * If we reach the threshold, then we begin our timer (timer_start), we keep adding
+                     * to the dynamic array of gyro values as long as we stay above the threshold, if we
+                     * dip below the threshold (aka: stop turning) then we
+                     * go into the "else" statement, Then we take the avg of the gyro values
+                     * and multiply by the time duration and add to the total rotation
+                     */
+
+                    if(Gyro_z > 0.5 || Gyro_z < -0.5)
+                    //if(Gyro_z > 1.0 || Gyro_z < -1.0)
+                    {
+                        angular_velocity.add(Gyro_z);
+                        if(angular_velocity.size() == 1)
+                        {
+                            timer_start = System.currentTimeMillis();
+                        }
+                        rotate_Flag = 1;
+                    }
+                    else if (rotate_Flag == 1)
+                    {
+                        time_duration = System.currentTimeMillis() - timer_start;
+
+                        if(angular_velocity.size() != 0){
+                            for(int i=0; i < angular_velocity.size();i++)
+                            {
+                                sum_of_velocities += (float) angular_velocity.get(i);
+                            }
+                            avg_velocity = sum_of_velocities / angular_velocity.size();
+                            angular_velocity.clear();
+                            avg_velocity = (float)Math.toDegrees(avg_velocity);
+                        }
+                        //time_duration /= 1000.0f;
+                        Rotation += avg_velocity * time_duration;
+                        rotate_Flag = 0;
+                    }
+
+
+
+                    /*
                     if(Gyro_z > -0.5){
                         rotate_Flag = 1;
                     }
@@ -292,11 +328,22 @@ public class MainActivity extends ActionBarActivity {
                         //Rotation += 90;//angular_distance_traveled; //assume 90 degree turns only
                     }
 
+                    if (rotate_Flag_pos == 2){
+                        
+                    }
+                    if((Gyro_z < 1.75) && (rotate_Flag_pos == 2)) {
+                        Gyro_timestamp = System.currentTimeMillis();
+                        degrees_per_sec = (float)Math.toDegrees(Gyro_z);
+                        dT = (Gyro_timestamp - current_timestamp) * NS2S;
+
+                    }*/
+
                     TextView gyro = (TextView) findViewById(R.id.textView);
                     gyro.setText("Time_Stamp: "+timeStamp_new+"\nAccel_x: " + Accel_x + "\nAccel_y: " + Accel_y + "\nAccel_z: "
                             + Accel_z+ "\nGyro_x: " + Gyro_x + "\nGyro_y: " + Gyro_y + "\nGyro_z: " + Gyro_z + "\nMag_x: " + Mag_x + "\nMag_y: " + Mag_y +
                             "\nMag_z: " + Mag_z + "\nLight: " + Light_intensity+"\nSteps: "+numSteps+"\nJumps: "+numJumps+
-                            "\nDistance: "+distance+"\nRotation: "+Rotation+"\nAzimuth: "+azimuthInDegrees+"\nWIFI strength: "+ level+"\nMaxAmp: "+MaxAmp);
+                            "\nDistance: "+distance+"\nRotation: "+Rotation+"\nAzimuth: "+azimuthInDegrees+"\nWIFI strength: "+ level+"\nMaxAmp: "+MaxAmp+
+                            "\nTime: "+rotate_Flag);
                 }
             }
 
