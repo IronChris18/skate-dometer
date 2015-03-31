@@ -277,17 +277,21 @@ public class MainActivity extends ActionBarActivity {
                      * and multiply by the time duration and add to the total rotation
                      */
 
-                    if(Gyro_z > 0.5 || Gyro_z < -0.5)
+                    if((Gyro_z > 0.5 || Gyro_z < -0.5) && rotate_Flag == 0)       //if we are turning
                     //if(Gyro_z > 1.0 || Gyro_z < -1.0)
                     {
-                        angular_velocity.add(Gyro_z);
+                        angular_velocity.add(Gyro_z); //need absolute value
                         if(angular_velocity.size() == 1)
                         {
-                            timer_start = System.currentTimeMillis();
+                            timer_start = System.currentTimeMillis();   //begin turn
                         }
-                        rotate_Flag = 1;
+                        rotate_Flag = 1; //start turning
                     }
-                    else if (rotate_Flag == 1)
+                    /*if (rotate_Flag == 1 && (Gyro_z < 0.5 && Gyro_z > -0.5)) //end turn
+                    {
+                        rotate_Flag = 2;
+                    }*/
+                    if (rotate_Flag == 1 && (Gyro_z < 0.5 && Gyro_z > -0.5))      //if turn is finished
                     {
                         time_duration = System.currentTimeMillis() - timer_start;
 
