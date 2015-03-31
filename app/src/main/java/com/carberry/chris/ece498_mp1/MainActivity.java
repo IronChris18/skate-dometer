@@ -274,41 +274,34 @@ public class MainActivity extends ActionBarActivity {
 
 
                     if(Gyro_z > -0.5){
-                        //Gyro_timestamp = event.timestamp;
                         rotate_Flag = 1;
                     }
                     if(Gyro_z < 0.5){
-                        //Gyro_timestamp = event.timestamp;
                         rotate_Flag_pos = 1;
                     }
 
                     if((Gyro_z < -1.75) && (rotate_Flag == 1)){
                         rotate_Flag = 0;
+                        current_timestamp = System.currentTimeMillis();
 
-                        /*current_timestamp = System.currentTimeMillis();
-                        current_timestamp *= 1000;
-                        //gyroscope gives data in radians per second
-                        degrees_per_sec = (float)Math.toDegrees(Gyro_z);
-                        dT = (current_timestamp - Gyro_timestamp) * NS2S;
-
-                        angular_distance_traveled = dT * degrees_per_sec;
-                        */
                         Rotation += 90;//angular_distance_traveled; //assume 90 degree turns only
                     }
                     if((Gyro_z > 1.75) && (rotate_Flag_pos == 1)){
-                        rotate_Flag_pos = 0;
-                        /*current_timestamp = System.currentTimeMillis();
-                        current_timestamp *= 1000;
+                        rotate_Flag_pos = 2;
+                        current_timestamp = System.currentTimeMillis();
 
-                        //gyroscope gives data in radians per second
-                        degrees_per_sec = (float)Math.toDegrees(Gyro_z);
-                        dT = (current_timestamp - Gyro_timestamp) * NS2S;
-
-                        angular_distance_traveled = dT * degrees_per_sec;
-                        */
-                        Rotation += 90;//angular_distance_traveled; //assume 90 degree turns only
+                        //Rotation += 90;//angular_distance_traveled; //assume 90 degree turns only
                     }
 
+                    if (rotate_Flag_pos == 2){
+                        
+                    }
+                    if((Gyro_z < 1.75) && (rotate_Flag_pos == 2)) {
+                        Gyro_timestamp = System.currentTimeMillis();
+                        degrees_per_sec = (float)Math.toDegrees(Gyro_z);
+                        dT = (Gyro_timestamp - current_timestamp) * NS2S;
+
+                    }
                     TextView gyro = (TextView) findViewById(R.id.textView);
                     gyro.setText("Time_Stamp: "+timeStamp_new+"\nAccel_x: " + Accel_x + "\nAccel_y: " + Accel_y + "\nAccel_z: "
                             + Accel_z+ "\nGyro_x: " + Gyro_x + "\nGyro_y: " + Gyro_y + "\nGyro_z: " + Gyro_z + "\nMag_x: " + Mag_x + "\nMag_y: " + Mag_y +
