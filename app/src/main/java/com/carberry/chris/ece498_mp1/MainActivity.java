@@ -15,6 +15,7 @@ import android.view.View;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.os.SystemClock;
+import android.net.wifi.WifiInfo;
 
 // http://developer.android.com/guide/topics/media/audio-capture.html
 // Do they want this put in an mp3 file or something? What do they want in CSV?
@@ -22,7 +23,7 @@ import android.media.MediaRecorder;
 
 // WIFI STUFF, what info do they want in the CSV?
 // http://developer.android.com/reference/android/net/wifi/WifiManager.html
-// import android.net.wifi.WifiManager
+import android.net.wifi.WifiManager;
 
 import java.io.*;
 import java.io.IOException;
@@ -85,6 +86,7 @@ public class MainActivity extends ActionBarActivity {
     float dT = 0;
     float NS2S = 1.0f / 1000000000.0f;
     float angular_distance_traveled = 0;
+    WifiManager mainWifiObj;
 
     @Override
     protected void onResume() {
@@ -127,6 +129,7 @@ public class MainActivity extends ActionBarActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        mainWifiObj = (WifiManager) getSystemService(Context.WIFI_SERVICE);
 
 
         //private inner class
@@ -297,11 +300,19 @@ public class MainActivity extends ActionBarActivity {
                     }
 
 
+                    /* WIFI DATA
+                     *
+                     */
+                    int numberOfLevels=5;
+                    WifiInfo wifiInfo = mainWifiObj.getConnectionInfo();
+                    int level=WifiManager.calculateSignalLevel(wifiInfo.getRssi(), numberOfLevels);
+
+
                     TextView gyro = (TextView) findViewById(R.id.textView);
                     gyro.setText("Time_Stamp: "+timeStamp_new+"\nAccel_x: " + Accel_x + "\nAccel_y: " + Accel_y + "\nAccel_z: "
                             + Accel_z+ "\nGyro_x: " + Gyro_x + "\nGyro_y: " + Gyro_y + "\nGyro_z: " + Gyro_z + "\nMag_x: " + Mag_x + "\nMag_y: " + Mag_y +
                             "\nMag_z: " + Mag_z + "\nLight: " + Light_intensity+"\nSteps: "+numSteps+"\nJumps: "+numJumps+
-                            "\nDistance: "+distance+"\nRotation: "+Rotation+"\nAzimuth: "+azimuthInDegrees);
+                            "\nDistance: "+distance+"\nRotation: "+Rotation+"\nAzimuth: "+azimuthInDegrees+"\nWIFI strength: "+ level);
                 }
             }
 
