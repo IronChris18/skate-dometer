@@ -13,7 +13,6 @@ import android.os.Environment;
 import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.opencsv.CSVWriter;
@@ -89,11 +88,11 @@ public class MainActivity extends ActionBarActivity {
         mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE), SensorManager.SENSOR_DELAY_FASTEST);
         mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD), SensorManager.SENSOR_DELAY_FASTEST);
         mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT), SensorManager.SENSOR_DELAY_FASTEST);
-        try {
+        try {       //for sound recording
             recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
             recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
             recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-            recorder.setOutputFile(Environment.getExternalStorageDirectory().toString() + "/dev");
+            recorder.setOutputFile(Environment.getExternalStorageDirectory().toString() + "/useless");
             recorder.prepare();
             recorder.start();   // Recording is now started
         }
@@ -110,7 +109,7 @@ public class MainActivity extends ActionBarActivity {
         mSensorManager.unregisterListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE));
         mSensorManager.unregisterListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD));
         mSensorManager.unregisterListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT));
-        recorder.stop();
+        recorder.stop();    //stop recording "clean up"
         recorder.reset();   // You can reuse the object by going back to setAudioSource() step
         recorder.release(); // Now the object cannot be reused
         super.onPause();
@@ -125,7 +124,7 @@ public class MainActivity extends ActionBarActivity {
 
         //private inner class
         mSensorListener = new SensorEventListener() {
-
+            //for compass
             float[] mGravity;
             float[] mGeomagnetic;
 
@@ -147,7 +146,6 @@ public class MainActivity extends ActionBarActivity {
                     currentZ = Accel_z;
                 }
                 if (sensor.getType() == Sensor.TYPE_GYROSCOPE && gyro != 1) {
-                    //Gyro_timestamp = event.timestamp;       //nanoseconds
                     Gyro_x = event.values[0];
                     Gyro_y = event.values[1];
                     Gyro_z = event.values[2];
@@ -225,6 +223,7 @@ public class MainActivity extends ActionBarActivity {
                     WifiInfo wifiInfo = mainWifiObj.getConnectionInfo();
                     level=WifiManager.calculateSignalLevel(wifiInfo.getRssi(), numberOfLevels);
 
+                    //Sound sensor output
                     MaxAmp = recorder.getMaxAmplitude();
 
                     long timeStamp_new = System.currentTimeMillis() - timeStamp;
@@ -245,17 +244,14 @@ public class MainActivity extends ActionBarActivity {
                     }
 
                     numJumps /= 2; //two peaks per jump
-
-                    distance = numSteps * stepLength;
-
-
+                    distance = numSteps * stepLength;   //steplength is estimated
 
                     /* ANGULAR DISPLACEMENT
                      *
                      * If we reach the threshold, then we begin our timer (timer_start), we keep adding
                      * to the dynamic array of gyro values as long as we stay above the threshold, if we
                      * dip below the threshold (aka: stop turning) then we
-                     * go into the "else" statement, Then we take the avg of the gyro values
+                     * go into the next "if" statement, Then we take the avg of the gyro values
                      * and multiply by the time duration and add to the total rotation
                      */
 
@@ -293,8 +289,7 @@ public class MainActivity extends ActionBarActivity {
                     gyro.setText("Time_Stamp: "+timeStamp_new+"\nAccel_x: " + Accel_x + "\nAccel_y: " + Accel_y + "\nAccel_z: "
                             + Accel_z+ "\nGyro_x: " + Gyro_x + "\nGyro_y: " + Gyro_y + "\nGyro_z: " + Gyro_z + "\nMag_x: " + Mag_x + "\nMag_y: " + Mag_y +
                             "\nMag_z: " + Mag_z + "\nLight: " + Light_intensity+"\nSteps: "+numSteps+"\nJumps: "+numJumps+
-                            "\nDistance: "+distance+"\nRotation: "+Rotation+"\nAzimuth: "+azimuthInDegrees+"\nWIFI strength: "+ level+"\nMaxAmp: "+MaxAmp+
-                            "\nRotation: "+Rotation);
+                            "\nDistance: "+distance+"\nRotation: "+Rotation+"\nCompass: "+azimuthInDegrees+"\nWIFI strength: "+ level+"\nMaxAmp: "+MaxAmp);
                 }
             }
 
