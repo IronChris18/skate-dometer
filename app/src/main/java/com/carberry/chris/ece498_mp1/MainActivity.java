@@ -1,37 +1,31 @@
 package com.carberry.chris.ece498_mp1;
 
 import android.content.Context;
-import android.content.Intent;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.media.MediaRecorder;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 import android.widget.SeekBar;
 import android.widget.TextView;
-import android.os.SystemClock;
-import android.net.wifi.WifiInfo;
-import java.util.*;
-
-// http://developer.android.com/guide/topics/media/audio-capture.html
-// Do they want this put in an mp3 file or something? What do they want in CSV?
-import android.media.MediaRecorder;
-
-// WIFI STUFF, what info do they want in the CSV?
-// http://developer.android.com/reference/android/net/wifi/WifiManager.html
-import android.net.wifi.WifiManager;
-
-import java.io.*;
-import java.io.IOException;
 
 import com.opencsv.CSVWriter;
 
-import static android.os.SystemClock.uptimeMillis;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+
+// http://developer.android.com/guide/topics/media/audio-capture.html
+// Do they want this put in an mp3 file or something? What do they want in CSV?
+// WIFI STUFF, what info do they want in the CSV?
+// http://developer.android.com/reference/android/net/wifi/WifiManager.html
 
 public class MainActivity extends ActionBarActivity {
 
@@ -41,19 +35,14 @@ public class MainActivity extends ActionBarActivity {
     // pedometer tutorial
     // http://nebomusic.net/androidlessons/Pedometer_Project.pdf
     //values for PEDOMETER/STEPS
-    //private float acceleration;
 
     //values to Calculate Number of Steps
     private float previousZ = 0;
     private float currentZ = 0;
-    private float previousY;
-    private float currentY;
     private int numSteps = 0;
     private int distance = 0;
     private int stepLength = 2;
 
-    // SeekBar Fields
-    private SeekBar seekbar;
     private double threshold = 11.5;
     private double threshold_jump =17;
 
@@ -69,34 +58,28 @@ public class MainActivity extends ActionBarActivity {
     float Mag_y = 0;
     float Mag_z = 0;
     float Light_intensity = 0;
-    int accel, gyro, mag, light, orientation = 0;
+    int accel, gyro, mag, light = 0;
     int pos_slope_flag = 0;
     long cur_time = 0;
     int pos_slope_flag_jump = 0;
     long cur_time_jump = 0;
     int numJumps = 0;
-    int Rotation = 0;
+    float Rotation = 0;
     int rotate_Flag = 0;
-    int rotate_Flag_pos = 0;
     int level = 0;
 
     float azimuthInRadians = 0;
     float azimuthInDegrees = 0;
-    float degrees_per_sec = 0;
-    float Gyro_timestamp = 0;
-    float current_timestamp = 0;
-    float dT = 0;
-    float NS2S = 1.0f / 1000000000.0f;
-    float angular_distance_traveled = 0;
-    float MaxAmp = 1.0f;
+    float MaxAmp = 0.0f;
     WifiManager mainWifiObj;
     MediaRecorder recorder = new MediaRecorder();
     ArrayList angular_velocity = new ArrayList();
-    float time_duration;
-    float timer_start;
-    float avg_velocity;
-    float sum_of_velocities;
+    float time_duration = 0;
+    long timer_start = 0;
+    float avg_velocity = 0.0f;
+    float sum_of_velocities = 0.0f;
 
+    int sum=0;
     @Override
     protected void onResume() {
         // Register a listener for each sensor.
@@ -160,9 +143,8 @@ public class MainActivity extends ActionBarActivity {
                     Accel_z = event.values[2];
                     accel = 1;
 
-                    /* fetch the current y */
+                    /* fetch the current Z */
                     currentZ = Accel_z;
-                    currentY = Accel_y;
                 }
                 if (sensor.getType() == Sensor.TYPE_GYROSCOPE && gyro != 1) {
                     //Gyro_timestamp = event.timestamp;       //nanoseconds
@@ -277,77 +259,42 @@ public class MainActivity extends ActionBarActivity {
                      * and multiply by the time duration and add to the total rotation
                      */
 
-                    if((Gyro_z > 0.5 || Gyro_z < -0.5) && rotate_Flag == 0)       //if we are turning
-                    //if(Gyro_z > 1.0 || Gyro_z < -1.0)
+                    if((Gyro_z > 1.1 || Gyro_z < -1.1))       //if we are turning
                     {
-                        angular_velocity.add(Gyro_z); //need absolute value
+                        angular_velocity.add(Math.abs(Gyro_z)); //need absolute value
                         if(angular_velocity.size() == 1)
                         {
                             timer_start = System.currentTimeMillis();   //begin turn
                         }
-                        rotate_Flag = 1; //start turning
+                        rotate_Flag = 1; //give ok to calculate rotation
                     }
-                    /*if (rotate_Flag == 1 && (Gyro_z < 0.5 && Gyro_z > -0.5)) //end turn
+
+
+                    if (rotate_Flag == 1 && (Gyro_z < 1.1 && Gyro_z > -1.1))      //if turn is finished
                     {
-                        rotate_Flag = 2;
-                    }*/
-                    if (rotate_Flag == 1 && (Gyro_z < 0.5 && Gyro_z > -0.5))      //if turn is finished
-                    {
-                        time_duration = System.currentTimeMillis() - timer_start;
+                        time_duration = System.currentTimeMillis() - timer_start; //calculate length of turn
 
                         if(angular_velocity.size() != 0){
                             for(int i=0; i < angular_velocity.size();i++)
                             {
-                                sum_of_velocities += (float) angular_velocity.get(i);
+                                sum_of_velocities += Math.abs((float) angular_velocity.get(i));
                             }
                             avg_velocity = sum_of_velocities / angular_velocity.size();
+                            sum = angular_velocity.size();
                             angular_velocity.clear();
-                            avg_velocity = (float)Math.toDegrees(avg_velocity);
                         }
-                        //time_duration /= 1000.0f;
-                        Rotation += avg_velocity * time_duration;
+                        time_duration = time_duration / 1000.0f;
+                        Rotation = Rotation + (float) Math.toDegrees((avg_velocity * time_duration));
+                        sum_of_velocities = 0;
                         rotate_Flag = 0;
                     }
-
-
-
-                    /*
-                    if(Gyro_z > -0.5){
-                        rotate_Flag = 1;
-                    }
-                    if(Gyro_z < 0.5){
-                        rotate_Flag_pos = 1;
-                    }
-
-                    if((Gyro_z < -1.75) && (rotate_Flag == 1)){
-                        rotate_Flag = 0;
-                        current_timestamp = System.currentTimeMillis();
-
-                        Rotation += 90;//angular_distance_traveled; //assume 90 degree turns only
-                    }
-                    if((Gyro_z > 1.75) && (rotate_Flag_pos == 1)){
-                        rotate_Flag_pos = 2;
-                        current_timestamp = System.currentTimeMillis();
-
-                        //Rotation += 90;//angular_distance_traveled; //assume 90 degree turns only
-                    }
-
-                    if (rotate_Flag_pos == 2){
-                        
-                    }
-                    if((Gyro_z < 1.75) && (rotate_Flag_pos == 2)) {
-                        Gyro_timestamp = System.currentTimeMillis();
-                        degrees_per_sec = (float)Math.toDegrees(Gyro_z);
-                        dT = (Gyro_timestamp - current_timestamp) * NS2S;
-
-                    }*/
 
                     TextView gyro = (TextView) findViewById(R.id.textView);
                     gyro.setText("Time_Stamp: "+timeStamp_new+"\nAccel_x: " + Accel_x + "\nAccel_y: " + Accel_y + "\nAccel_z: "
                             + Accel_z+ "\nGyro_x: " + Gyro_x + "\nGyro_y: " + Gyro_y + "\nGyro_z: " + Gyro_z + "\nMag_x: " + Mag_x + "\nMag_y: " + Mag_y +
                             "\nMag_z: " + Mag_z + "\nLight: " + Light_intensity+"\nSteps: "+numSteps+"\nJumps: "+numJumps+
                             "\nDistance: "+distance+"\nRotation: "+Rotation+"\nAzimuth: "+azimuthInDegrees+"\nWIFI strength: "+ level+"\nMaxAmp: "+MaxAmp+
-                            "\nTime: "+rotate_Flag);
+                            "\nRotation: "+Rotation);
                 }
             }
 
