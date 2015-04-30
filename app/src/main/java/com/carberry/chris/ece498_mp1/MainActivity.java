@@ -74,6 +74,12 @@ public class MainActivity extends ActionBarActivity {
     ArrayList angular_velocity = new ArrayList();
     float avg_velocity = 0.0f;
     float sum_of_velocities = 0.0f;
+
+    //smoothing variables
+    static final float ALPHA = 0.2f;
+    float [] smooth_accel_vals;
+    float [] smooth_gyro_vals;
+
     int sum=0;
 
     //wifi variables
@@ -116,11 +122,26 @@ public class MainActivity extends ActionBarActivity {
             float[] mGravity;
             float[] mGeomagnetic;
 
+            //Low Pass filter for smoothing accelerometer data
+            protected float[] lowPass( float[] input, float[] output ) {
+                float [] copy = input;
+                if ( output == null )
+                    return copy;
+
+                for ( int i=0; i<input.length; i++ ) {
+                    output[i] = output[i] + ALPHA * (input[i] - output[i]);
+                }
+                return output;
+            }
+
             @Override
             public void onSensorChanged(SensorEvent event) {
                 Sensor sensor = event.sensor;
 
                 if (sensor.getType() == Sensor.TYPE_ACCELEROMETER && accel != 1) {
+
+                    // Smooth out the data so we can better understand thresholds
+                    smooth_accel_vals = lowPass( event.values, smooth_accel_vals);
 
                     //For the compass functionality
                     mGravity = event.values;
@@ -134,6 +155,10 @@ public class MainActivity extends ActionBarActivity {
                     currentZ = Math.abs(Accel_z);
                 }
                 if (sensor.getType() == Sensor.TYPE_GYROSCOPE && gyro != 1) {
+
+                    // Smooth out the data so we can better understand thresholds
+                    smooth_gyro_vals = lowPass( event.values, smooth_gyro_vals);
+
                     Gyro_x = event.values[0];
                     Gyro_y = event.values[1];
                     Gyro_z = event.values[2];
