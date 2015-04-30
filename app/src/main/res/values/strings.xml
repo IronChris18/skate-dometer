@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">ECE498_MP1</string>
+    <string name="app_name">ECE498_Final_Project</string>
     <string name="hello_world">Congratulations!\n You\'re trying to be healthy.\n *Background Applause*</string>
     <string name="action_settings">Settings</string>
     <string name="gyro"> </string>

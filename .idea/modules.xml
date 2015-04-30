@@ -6,6 +6,7 @@
       <module fileurl="file://$PROJECT_DIR$/ece498.iml" filepath="$PROJECT_DIR$/ece498.iml" />
       <module fileurl="file://$PROJECT_DIR$/opencsv-2.2/opencsv-2.2.iml" filepath="$PROJECT_DIR$/opencsv-2.2/opencsv-2.2.iml" />
       <module fileurl="file://$PROJECT_DIR$/opencsv-3.2/opencsv-3.2.iml" filepath="$PROJECT_DIR$/opencsv-3.2/opencsv-3.2.iml" />
+      <module fileurl="file://$PROJECT_DIR$/skate-dometer.iml" filepath="$PROJECT_DIR$/skate-dometer.iml" />
     </modules>
   </component>
 </project>

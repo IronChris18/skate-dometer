@@ -5,7 +5,6 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.media.MediaRecorder;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
@@ -14,9 +13,7 @@ import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
-
 import com.opencsv.CSVWriter;
-
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -25,25 +22,25 @@ import java.util.ArrayList;
 // Do they want this put in an mp3 file or something? What do they want in CSV?
 // WIFI STUFF, what info do they want in the CSV?
 // http://developer.android.com/reference/android/net/wifi/WifiManager.html
+// pedometer tutorial
+// http://nebomusic.net/androidlessons/Pedometer_Project.pdf
 
 public class MainActivity extends ActionBarActivity {
-
+    //sensor manager
     private SensorManager mSensorManager;
     private SensorEventListener mSensorListener;
 
-    // pedometer tutorial
-    // http://nebomusic.net/androidlessons/Pedometer_Project.pdf
-    //values for PEDOMETER/STEPS
-
-    //values to Calculate Number of Steps
+    //values to Calculate Number of Steps & jumps
     private float previousZ = 0;
     private float currentZ = 0;
     private int numSteps = 0;
+    private int numPushes = 0;
     private int distance = 0;
     private int stepLength = 2;
 
+    // thresholds
+    private double push_threshold = 15;
     private double threshold = 11.5;
-    private double threshold_jump =17;
 
     //values for csv file
     long timeStamp = System.currentTimeMillis();
@@ -57,48 +54,40 @@ public class MainActivity extends ActionBarActivity {
     float Mag_y = 0;
     float Mag_z = 0;
     float Light_intensity = 0;
+
+    //sensor flags
     int accel, gyro, mag, light = 0;
     int pos_slope_flag = 0;
-    long cur_time = 0;
-    int pos_slope_flag_jump = 0;
-    long cur_time_jump = 0;
-    int numJumps = 0;
-    float Rotation = 0;
-    int rotate_Flag = 0;
-    int level = 0;
+    int pos_push_flag = 0;
 
-    float azimuthInRadians = 0;
-    float azimuthInDegrees = 0;
-    float MaxAmp = 0.0f;
-    WifiManager mainWifiObj;
-    MediaRecorder recorder = new MediaRecorder();
-    ArrayList angular_velocity = new ArrayList();
+    //timing variables
+    long cur_time = 0;
+    long cur_time_push = 0;
     float time_duration = 0;
     long timer_start = 0;
+
+    //compass variables
+    float Rotation = 0;
+    int rotate_Flag = 0;
+    float azimuthInRadians = 0;
+    float azimuthInDegrees = 0;
+    ArrayList angular_velocity = new ArrayList();
     float avg_velocity = 0.0f;
     float sum_of_velocities = 0.0f;
-
     int sum=0;
+
+    //wifi variables
+    int level = 0;
+    WifiManager mainWifiObj;
+
     @Override
     protected void onResume() {
         // Register a listener for each sensor.
         super.onResume();
-
         mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_FASTEST);
         mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE), SensorManager.SENSOR_DELAY_FASTEST);
         mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD), SensorManager.SENSOR_DELAY_FASTEST);
         mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT), SensorManager.SENSOR_DELAY_FASTEST);
-        try {       //for sound recording
-            recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-            recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-            recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-            recorder.setOutputFile(Environment.getExternalStorageDirectory().toString() + "/useless");
-            recorder.prepare();
-            recorder.start();   // Recording is now started
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     @Override
@@ -109,9 +98,6 @@ public class MainActivity extends ActionBarActivity {
         mSensorManager.unregisterListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE));
         mSensorManager.unregisterListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD));
         mSensorManager.unregisterListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT));
-        recorder.stop();    //stop recording "clean up"
-        recorder.reset();   // You can reuse the object by going back to setAudioSource() step
-        recorder.release(); // Now the object cannot be reused
         super.onPause();
     }
 
@@ -119,7 +105,9 @@ public class MainActivity extends ActionBarActivity {
     protected final void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        //for sensors in general
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        //for wifi
         mainWifiObj = (WifiManager) getSystemService(Context.WIFI_SERVICE);
 
         //private inner class
@@ -143,7 +131,7 @@ public class MainActivity extends ActionBarActivity {
                     accel = 1;
 
                     /* fetch the current Z */
-                    currentZ = Accel_z;
+                    currentZ = Math.abs(Accel_z);
                 }
                 if (sensor.getType() == Sensor.TYPE_GYROSCOPE && gyro != 1) {
                     Gyro_x = event.values[0];
@@ -194,25 +182,24 @@ public class MainActivity extends ActionBarActivity {
                 if ((light == 1)&& (mag==1) && (gyro==1) && (accel == 1)){
                     // step logic
                     if(currentZ - previousZ > 0) {
-                        pos_slope_flag = 1;
+                        pos_slope_flag = 1;     //set flag if the previous step has finished
+                        pos_push_flag = 1;
                     }
                     if ((currentZ > threshold) && (pos_slope_flag == 1) && (currentZ - previousZ < 0) && (System.currentTimeMillis() - cur_time > 150)) {
-                        cur_time = System.currentTimeMillis();
-                        numSteps++;
+                        cur_time = System.currentTimeMillis();  //reset timer
+                        numSteps++;     //count total # of steps
                         pos_slope_flag = 0;
                     }
+                    //push logic
+                    if ((currentZ > push_threshold) && (pos_push_flag == 1) && (currentZ - previousZ < 0) && (System.currentTimeMillis() - cur_time_push > 500)) {
+                        cur_time_push = System.currentTimeMillis();  //reset timer
+                        numPushes++;     //count total # of pushes
+                        pos_push_flag = 0;
+                    }
 
-                    // Jump logic
-                    if(currentZ - previousZ > 0) {
-                        pos_slope_flag_jump = 1;
-                    }
-                    if ((currentZ > threshold_jump) && (pos_slope_flag_jump == 1) && (currentZ - previousZ < 0) && (System.currentTimeMillis() - cur_time_jump > 800)) {
-                        cur_time_jump = System.currentTimeMillis();
-                        numJumps++;
-                        pos_slope_flag_jump = 0;
-                    }
                     previousZ = currentZ;
 
+                    //set sensor flags back to 0
                     light = 0;
                     mag = 0;
                     gyro = 0;
@@ -223,9 +210,6 @@ public class MainActivity extends ActionBarActivity {
                     WifiInfo wifiInfo = mainWifiObj.getConnectionInfo();
                     level=WifiManager.calculateSignalLevel(wifiInfo.getRssi(), numberOfLevels);
 
-                    //Sound sensor output
-                    MaxAmp = recorder.getMaxAmplitude();
-
                     long timeStamp_new = System.currentTimeMillis() - timeStamp;
 
                     try {
@@ -234,7 +218,7 @@ public class MainActivity extends ActionBarActivity {
                         String[] record = new String[]{Float.toString(timeStamp_new), Float.toString(Accel_x), Float.toString(Accel_y),
                                 Float.toString(Accel_z), Float.toString(Gyro_x), Float.toString(Gyro_y), Float.toString(Gyro_z),
                                 Float.toString(Mag_x), Float.toString(Mag_y), Float.toString(Mag_z), Float.toString(Light_intensity), Float.toString(azimuthInDegrees),
-                                Float.toString(level), Float.toString(MaxAmp)};
+                                Float.toString(level)};
 
                         writer.writeNext(record);
                         writer.close();
@@ -243,8 +227,7 @@ public class MainActivity extends ActionBarActivity {
                         e.printStackTrace();
                     }
 
-                    numJumps /= 2; //two peaks per jump
-                    distance = numSteps * stepLength;   //steplength is estimated
+                    //distance = numSteps * stepLength;   //steplength is estimated
 
                     /* ANGULAR DISPLACEMENT
                      *
@@ -288,8 +271,8 @@ public class MainActivity extends ActionBarActivity {
                     TextView gyro = (TextView) findViewById(R.id.textView);
                     gyro.setText("Time_Stamp: "+timeStamp_new+"\nAccel_x: " + Accel_x + "\nAccel_y: " + Accel_y + "\nAccel_z: "
                             + Accel_z+ "\nGyro_x: " + Gyro_x + "\nGyro_y: " + Gyro_y + "\nGyro_z: " + Gyro_z + "\nMag_x: " + Mag_x + "\nMag_y: " + Mag_y +
-                            "\nMag_z: " + Mag_z + "\nLight: " + Light_intensity+"\nSteps: "+numSteps+"\nJumps: "+numJumps+
-                            "\nDistance: "+distance+"\nRotation: "+Rotation+"\nCompass: "+azimuthInDegrees+"\nWIFI strength: "+ level+"\nMaxAmp: "+MaxAmp);
+                            "\nMag_z: " + Mag_z + "\nLight: " + Light_intensity+"\nSteps: "+numSteps+"\nPushes: "+numPushes+
+                            "\nRotation: "+Rotation+"\nCompass: "+azimuthInDegrees+"\nWIFI strength: "+ level);
                 }
             }
 
