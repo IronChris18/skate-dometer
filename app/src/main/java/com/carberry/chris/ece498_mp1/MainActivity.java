@@ -12,7 +12,11 @@ import android.os.Environment;
 import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.content.Intent;
 import android.widget.TextView;
+
+
 import com.opencsv.CSVWriter;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -86,6 +90,11 @@ public class MainActivity extends ActionBarActivity {
     int level = 0;
     WifiManager mainWifiObj;
 
+    public void button_send(View view) {
+        Intent intent = new Intent(this, gps.class);
+        startActivity(intent);
+    }
+
     @Override
     protected void onResume() {
         // Register a listener for each sensor.
@@ -99,7 +108,6 @@ public class MainActivity extends ActionBarActivity {
     @Override
     protected void onPause() {
         // important to unregister the sensor when the activity pauses.
-        //mSensorManager.unregisterListener((SensorEventListener) this);
         mSensorManager.unregisterListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER));
         mSensorManager.unregisterListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE));
         mSensorManager.unregisterListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD));
@@ -111,6 +119,13 @@ public class MainActivity extends ActionBarActivity {
     protected final void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        getSensorData();
+
+    }
+
+    public void getSensorData() {
+
         //for sensors in general
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         //for wifi
@@ -298,6 +313,7 @@ public class MainActivity extends ActionBarActivity {
                             + Accel_z+ "\nGyro_x: " + Gyro_x + "\nGyro_y: " + Gyro_y + "\nGyro_z: " + Gyro_z + "\nMag_x: " + Mag_x + "\nMag_y: " + Mag_y +
                             "\nMag_z: " + Mag_z + "\nLight: " + Light_intensity+"\nSteps: "+numSteps+"\nPushes: "+numPushes+
                             "\nRotation: "+Rotation+"\nCompass: "+azimuthInDegrees+"\nWIFI strength: "+ level);
+
                 }
             }
 
@@ -306,6 +322,7 @@ public class MainActivity extends ActionBarActivity {
                 //do nothing
             }
         };
+
     }
 
     @Override
