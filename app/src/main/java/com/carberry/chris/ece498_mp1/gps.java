@@ -7,14 +7,19 @@ import android.location.LocationManager;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-public class gps extends FragmentActivity {
+public class gps extends FragmentActivity implements LocationListener{
     double latitude;
     double longitude;
+    private LocationManager locationManager;
+    private static final long MIN_TIME = 400;
+    private static final float MIN_DISTANCE = 1000;
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
 
     @Override
@@ -22,17 +27,53 @@ public class gps extends FragmentActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_gps);
 
-        getLocation();
         setUpMapIfNeeded();
+
+        mMap.setMyLocationEnabled(true);
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, MIN_TIME, MIN_DISTANCE, (LocationListener) this);
+
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        getLocation();
         setUpMapIfNeeded();
     }
+    @Override
+    public void onLocationChanged(Location location) {
+        latitude  = location.getLatitude();
+        longitude = location.getLongitude();
+        LatLng LOCAL_VIEW = new LatLng(latitude, longitude);
 
+        CameraPosition cameraPosition = new CameraPosition.Builder()
+                .target(LOCAL_VIEW )      // Sets the center of the map to Mountain View
+                .zoom(19)                   // Sets the zoom
+                .bearing(0)                // Sets the orientation of the camera to east
+                .tilt(30)                   // Sets the tilt of the camera to 30 degrees
+                .build();                   // Creates a CameraPosition from the builder
+        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+        locationManager.removeUpdates(this);
+
+    }
+
+    @Override
+    public void onProviderDisabled(String provider) {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public void onProviderEnabled(String provider) {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public void onStatusChanged(String provider, int status, Bundle extras) {
+        // TODO Auto-generated method stub
+
+    }
     /**
      * Sets up the map if it is possible to do so (i.e., the Google Play services APK is correctly
      * installed) and the map has not already been instantiated.. This will ensure that we only ever
@@ -56,9 +97,12 @@ public class gps extends FragmentActivity {
                     .getMap();
             // Check if we were successful in obtaining the map.
             if (mMap != null) {
-                setUpMap();
+                //setUpMap();
             }
         }
+        /*else if (mMap != null) {
+            setUpMap();
+        }*/
     }
 
     /**
@@ -68,36 +112,6 @@ public class gps extends FragmentActivity {
      * This should only be called once and when we are sure that {@link #mMap} is not null.
      */
     private void setUpMap() {
-        mMap.addMarker(new MarkerOptions().position(new LatLng(latitude, longitude)).title("Marker"));
-    }
-    private void getLocation() {
-        LocationManager locationManager = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
-        LocationListener locationListener = new LocationListener() {
-            @Override
-            public void onStatusChanged(String provider, int status, Bundle extras) {
-                // TODO Auto-generated method stub
-
-            }
-
-            @Override
-            public void onProviderEnabled(String provider) {
-                // TODO Auto-generated method stub
-
-            }
-
-            @Override
-            public void onProviderDisabled(String provider) {
-                // TODO Auto-generated method stub
-
-            }
-
-            @Override
-            public void onLocationChanged(Location location) {
-                // TODO Auto-generated method stub
-                latitude  = location.getLatitude();
-                longitude = location.getLongitude();
-            }
-        };
-        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, locationListener);
+        //mMap.addMarker(new MarkerOptions().position(new LatLng(0, 0)).title("Marker"));
     }
 }
