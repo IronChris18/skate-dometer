@@ -1,6 +1,7 @@
 package com.carberry.chris.ece498_mp1;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -13,11 +14,15 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.PolylineOptions;
 
 public class gps extends FragmentActivity implements LocationListener{
     double latitude;
     double longitude;
+    int flag = 0;
+    LatLng prev = new LatLng(0,0);
     private LocationManager locationManager;
     private static final long MIN_TIME = 500;   //update every 0.5 seconds
     private static final float MIN_DISTANCE = 0;//update after 5 meters
@@ -33,10 +38,35 @@ public class gps extends FragmentActivity implements LocationListener{
 
 
         mMap.setMyLocationEnabled(true);
-        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, MIN_TIME, MIN_DISTANCE, (LocationListener) this);
+        mMap.setOnMyLocationChangeListener(myLocationChangeListener);
+        //locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        //locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, MIN_TIME, MIN_DISTANCE, (LocationListener) this);
     }
 
+    private GoogleMap.OnMyLocationChangeListener myLocationChangeListener = new GoogleMap.OnMyLocationChangeListener() {
+        @Override
+        public void onMyLocationChange(Location location) {
+            LatLng loc = new LatLng(location.getLatitude(), location.getLongitude());
+            if(mMap != null){
+                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(loc, 19.0f));
+            }
+            if(flag==0)  //when the first update comes, we have no previous points,hence this 
+            {
+                prev=loc;
+                flag=1;
+            }
+            Marker mMarker = mMap.addMarker(new MarkerOptions().position(loc));
+            
+            CameraUpdate update = CameraUpdateFactory.newLatLngZoom(loc, 19);
+            mMap.animateCamera(update);
+            mMap.addPolyline((new PolylineOptions())
+                    .add(prev, loc).width(6).color(Color.BLUE)
+                    .visible(true));
+            prev=loc;
+            loc = null;
+            
+        }
+    };
     @Override
     protected void onResume() {
         super.onResume();
