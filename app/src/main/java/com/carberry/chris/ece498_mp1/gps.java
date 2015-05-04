@@ -7,6 +7,7 @@ import android.location.LocationManager;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 
+import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
@@ -18,8 +19,8 @@ public class gps extends FragmentActivity implements LocationListener{
     double latitude;
     double longitude;
     private LocationManager locationManager;
-    private static final long MIN_TIME = 400;
-    private static final float MIN_DISTANCE = 1000;
+    private static final long MIN_TIME = 500;   //update every 0.5 seconds
+    private static final float MIN_DISTANCE = 0;//update after 5 meters
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
 
     @Override
@@ -29,10 +30,11 @@ public class gps extends FragmentActivity implements LocationListener{
 
         setUpMapIfNeeded();
 
+
+
         mMap.setMyLocationEnabled(true);
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, MIN_TIME, MIN_DISTANCE, (LocationListener) this);
-
     }
 
     @Override
@@ -46,14 +48,16 @@ public class gps extends FragmentActivity implements LocationListener{
         longitude = location.getLongitude();
         LatLng LOCAL_VIEW = new LatLng(latitude, longitude);
 
-        CameraPosition cameraPosition = new CameraPosition.Builder()
+        CameraUpdate update = CameraUpdateFactory.newLatLngZoom(LOCAL_VIEW, 19);
+        mMap.animateCamera(update);
+        /*CameraPosition cameraPosition = new CameraPosition.Builder()
                 .target(LOCAL_VIEW )      // Sets the center of the map to Mountain View
                 .zoom(19)                   // Sets the zoom
                 .bearing(0)                // Sets the orientation of the camera to east
                 .tilt(30)                   // Sets the tilt of the camera to 30 degrees
                 .build();                   // Creates a CameraPosition from the builder
         mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-        locationManager.removeUpdates(this);
+        locationManager.removeUpdates(this);*/
 
     }
 
