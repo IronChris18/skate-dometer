@@ -8,7 +8,6 @@ import android.location.LocationManager;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.util.Log;
-
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -23,12 +22,14 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.android.gms.common.api.PendingResult;
+import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.LocationListener;
 
-import java.text.DateFormat;
-import java.util.Date;
+class gps extends FragmentActivity implements LocationListener,
+        GoogleApiClient.ConnectionCallbacks,
+        GoogleApiClient.OnConnectionFailedListener{
 
-class gps extends FragmentActivity{
-    private static final String TAG = "LocationActivity";
     private static final long INTERVAL = 1000 * 10;
     private static final long FASTEST_INTERVAL = 1000 * 5;
     LocationRequest mLocationRequest;
@@ -55,11 +56,6 @@ class gps extends FragmentActivity{
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        Log.d(TAG, "onCreate ...............................");
-        //show error dialog if GoolglePlayServices not available
-        if (!isGooglePlayServicesAvailable()) {
-            finish();
-        }
         createLocationRequest();
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addApi(LocationServices.API)
@@ -70,7 +66,7 @@ class gps extends FragmentActivity{
 
         setUpMapIfNeeded();
 
-        //mMap.setMyLocationEnabled(true);
+        mMap.setMyLocationEnabled(true);
         //mMap.setOnMyLocationChangeListener(myLocationChangeListener);
         //locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         //locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, MIN_TIME, MIN_DISTANCE, (LocationListener) this);
@@ -91,26 +87,17 @@ class gps extends FragmentActivity{
         super.onStop();
         mGoogleApiClient.disconnect();
     }
-    private boolean isGooglePlayServicesAvailable() {
-        int status = GooglePlayServicesUtil.isGooglePlayServicesAvailable(this);
-        if (ConnectionResult.SUCCESS == status) {
-            return true;
-        } else {
-            GooglePlayServicesUtil.getErrorDialog(status, this, 0).show();
-            return false;
-        }
-    }
+
 
     @Override
     public void onConnected(Bundle bundle) {
-        Log.d(TAG, "onConnected - isConnected ...............: " + mGoogleApiClient.isConnected());
         startLocationUpdates();
     }
 
     protected void startLocationUpdates() {
         PendingResult<Status> pendingResult = LocationServices.FusedLocationApi.requestLocationUpdates(
                 mGoogleApiClient, mLocationRequest, this);
-        Log.d(TAG, "Location update started ..............: ");
+
     }
 
     @Override
@@ -120,14 +107,29 @@ class gps extends FragmentActivity{
 
     @Override
     public void onConnectionFailed(ConnectionResult connectionResult) {
-        Log.d(TAG, "Connection failed: " + connectionResult.toString());
+
     }
 
     @Override
     public void onLocationChanged(Location location) {
-        Log.d(TAG, "Firing onLocationChanged..............................................");
         mCurrentLocation = location;
-        mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
+        if (null != mCurrentLocation) {
+            LatLng loc = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
+            Marker mMarker = mMap.addMarker(new MarkerOptions().position(loc));
+            if (flag == 0)  //when the first update comes, we have no previous points,hence this
+            {
+                prev = loc;
+                flag = 1;
+            }
+            mMap.addPolyline((new PolylineOptions())
+                    .add(prev, loc).width(6).color(Color.BLUE)
+                    .visible(true));
+
+            prev = loc;
+            if (mMap != null) {
+                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(loc, 19.0f));
+            }
+        }
     }
 
 
@@ -140,7 +142,7 @@ class gps extends FragmentActivity{
     protected void stopLocationUpdates() {
         LocationServices.FusedLocationApi.removeLocationUpdates(
                 mGoogleApiClient, (com.google.android.gms.location.LocationListener) this);
-        Log.d(TAG, "Location update stopped .......................");
+
     }
 
     @Override
@@ -148,7 +150,6 @@ class gps extends FragmentActivity{
         super.onResume();
         if (mGoogleApiClient.isConnected()) {
             startLocationUpdates();
-            Log.d(TAG, "Location update resumed .....................");
         }
     }
 
