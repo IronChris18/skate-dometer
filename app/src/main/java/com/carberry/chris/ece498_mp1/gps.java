@@ -2,6 +2,7 @@ package com.carberry.chris.ece498_mp1;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -18,14 +19,14 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 
-public class gps extends FragmentActivity implements LocationListener{
+public class gps extends FragmentActivity{
     double latitude;
     double longitude;
     int flag = 0;
     LatLng prev = new LatLng(0,0);
-    private LocationManager locationManager;
-    private static final long MIN_TIME = 500;   //update every 0.5 seconds
-    private static final float MIN_DISTANCE = 0;//update after 5 meters
+    //private LocationManager locationManager;
+    //private static final long MIN_TIME = 500;   //update every 0.5 seconds
+    //private static final float MIN_DISTANCE = 0;//update after 5 meters
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
 
     @Override
@@ -46,24 +47,41 @@ public class gps extends FragmentActivity implements LocationListener{
     private GoogleMap.OnMyLocationChangeListener myLocationChangeListener = new GoogleMap.OnMyLocationChangeListener() {
         @Override
         public void onMyLocationChange(Location location) {
+            Criteria criteria = new Criteria();
+            criteria.setAccuracy(Criteria.ACCURACY_FINE);
+            criteria.setPowerRequirement(Criteria.NO_REQUIREMENT);
+            criteria.setAltitudeRequired(true);
+            criteria.setSpeedRequired(true);
+            criteria.setCostAllowed(true);
+            criteria.setBearingRequired(true);
+
+            //API level 9 and up
+            criteria.setHorizontalAccuracy(Criteria.ACCURACY_HIGH);
+            criteria.setVerticalAccuracy(Criteria.ACCURACY_HIGH);
+            criteria.setBearingAccuracy(Criteria.ACCURACY_HIGH);
+            criteria.setSpeedAccuracy(Criteria.ACCURACY_HIGH);
+
             LatLng loc = new LatLng(location.getLatitude(), location.getLongitude());
             if(mMap != null){
+                if(flag==0)  //when the first update comes, we have no previous points,hence this
+                {
+                    prev=loc;
+                    flag=1;
+                }
+                mMap.addMarker(new MarkerOptions().position(loc));
                 mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(loc, 19.0f));
-            }
-            if(flag==0)  //when the first update comes, we have no previous points,hence this 
-            {
+                mMap.addPolyline((new PolylineOptions())
+                        .add(prev, loc).width(6).color(Color.BLUE)
+                        .visible(true));
                 prev=loc;
-                flag=1;
             }
-            Marker mMarker = mMap.addMarker(new MarkerOptions().position(loc));
+
+
             
-            CameraUpdate update = CameraUpdateFactory.newLatLngZoom(loc, 19);
-            mMap.animateCamera(update);
-            mMap.addPolyline((new PolylineOptions())
-                    .add(prev, loc).width(6).color(Color.BLUE)
-                    .visible(true));
-            prev=loc;
-            loc = null;
+            //CameraUpdate update = CameraUpdateFactory.newLatLngZoom(loc, 19);
+            //mMap.animateCamera(update);
+
+            //loc = null;
             
         }
     };
@@ -72,14 +90,14 @@ public class gps extends FragmentActivity implements LocationListener{
         super.onResume();
         setUpMapIfNeeded();
     }
-    @Override
+    /*@Override
     public void onLocationChanged(Location location) {
         latitude  = location.getLatitude();
         longitude = location.getLongitude();
         LatLng LOCAL_VIEW = new LatLng(latitude, longitude);
 
         CameraUpdate update = CameraUpdateFactory.newLatLngZoom(LOCAL_VIEW, 19);
-        mMap.animateCamera(update);
+        mMap.animateCamera(update);*/
         /*CameraPosition cameraPosition = new CameraPosition.Builder()
                 .target(LOCAL_VIEW )      // Sets the center of the map to Mountain View
                 .zoom(19)                   // Sets the zoom
@@ -89,8 +107,8 @@ public class gps extends FragmentActivity implements LocationListener{
         mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
         locationManager.removeUpdates(this);*/
 
-    }
-
+   // }
+/*
     @Override
     public void onProviderDisabled(String provider) {
         // TODO Auto-generated method stub
@@ -107,7 +125,7 @@ public class gps extends FragmentActivity implements LocationListener{
     public void onStatusChanged(String provider, int status, Bundle extras) {
         // TODO Auto-generated method stub
 
-    }
+    }*/
     /**
      * Sets up the map if it is possible to do so (i.e., the Google Play services APK is correctly
      * installed) and the map has not already been instantiated.. This will ensure that we only ever
