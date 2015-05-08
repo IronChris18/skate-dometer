@@ -17,6 +17,7 @@ import android.content.Intent;
 import android.widget.TextView;
 
 
+import com.google.android.gms.maps.model.LatLng;
 import com.opencsv.CSVWriter;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -378,6 +379,12 @@ public class MainActivity extends ActionBarActivity {
 
 
 
+    public float[] calculate_distance( float[] input) {
+
+
+    }
+
+
     /*
     * High pass filter
     *   Inputs:
@@ -415,10 +422,14 @@ public class MainActivity extends ActionBarActivity {
      *Returns:
      *	LatLng = new estimated latitude and longitude
      */
-    public LatLng calc_LatLng_DR(float latitude_old, float longitude_old, float bearing, float distance) {
+    float bearing_old = 0;
+    float bearing_new = 0;
+
+    public LatLng calc_LatLng_DR(float latitude_old, float longitude_old, float bearing_old, float bearing_new, float distance) {
         // I think the math needs the distance to be in kilometers
-        double dist = distance / 1000
-        double brng = Math.toRadians(bearing);
+        double dist = distance / 1000;
+        // I might need to change for positive negative values
+        double brng = Math.toRadians(bearing_new - bearing_old);
         double lat1 = Math.toRadians(latitude_old);
         double lon1 = Math.toRadians(longitude_old);
 

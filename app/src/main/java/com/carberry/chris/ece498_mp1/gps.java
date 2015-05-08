@@ -44,17 +44,19 @@ public class gps extends FragmentActivity implements LocationListener{
     }
 
     private GoogleMap.OnMyLocationChangeListener myLocationChangeListener = new GoogleMap.OnMyLocationChangeListener() {
-        @Override
-        public void onMyLocationChange(Location location) {
-            LatLng loc = new LatLng(location.getLatitude(), location.getLongitude());
-            if(mMap != null){
-                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(loc, 19.0f));
-            }
-            if(flag==0)  //when the first update comes, we have no previous points,hence this 
+                @Override
+                public void onMyLocationChange(Location location) {
+                    LatLng loc = new LatLng(location.getLatitude(), location.getLongitude());
+                    if(mMap != null){
+                        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(loc, 19.0f));
+                    }
+
+            if(flag==0)  //when the first update comes, we have no previous points,hence this
             {
                 prev=loc;
                 flag=1;
             }
+
             Marker mMarker = mMap.addMarker(new MarkerOptions().position(loc));
             
             CameraUpdate update = CameraUpdateFactory.newLatLngZoom(loc, 19);
