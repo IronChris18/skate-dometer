@@ -1,21 +1,15 @@
 package com.carberry.chris.ece498_mp1;
 
-import android.content.Context;
 import android.graphics.Color;
 import android.location.Criteria;
 import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
-import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.support.v4.app.FragmentActivity;
 
-import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 
@@ -63,7 +57,7 @@ public class gps extends FragmentActivity{
                     prev=loc;
                     flag=1;
                 }
-                //mMap.addMarker(new MarkerOptions().position(loc));
+                //mMap.addMarker(new MarkerOptions().position(loc).title("Distance" + distance).snippet("Pushes"+pushes));
                 mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(loc, 19.0f));
                 mMap.addPolyline((new PolylineOptions())
                         .add(prev, loc).width(6).color(Color.BLUE)
