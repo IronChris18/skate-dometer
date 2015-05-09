@@ -17,6 +17,7 @@ import android.content.Intent;
 import android.widget.TextView;
 
 
+import com.google.android.gms.maps.model.LatLng;
 import com.opencsv.CSVWriter;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -57,10 +58,10 @@ public class MainActivity extends ActionBarActivity {
     float Mag_x = 0;
     float Mag_y = 0;
     float Mag_z = 0;
-    float Light_intensity = 0;
+    //float Light_intensity = 0;
 
     //sensor flags
-    int accel, gyro, mag, light = 0;
+    int accel, gyro, mag = 0;
     int pos_slope_flag = 0;
     int pos_push_flag = 0;
 
@@ -78,17 +79,18 @@ public class MainActivity extends ActionBarActivity {
     ArrayList angular_velocity = new ArrayList();
     float avg_velocity = 0.0f;
     float sum_of_velocities = 0.0f;
+    int sum = 0;
 
     //smoothing variables
     static final float ALPHA = 0.2f;
-    float [] smooth_accel_vals;
-    float [] smooth_gyro_vals;
+    float[] smooth_accel_vals;
+    private float[] accel_last = {0,0,0};
 
-    int sum=0;
+    // Create a constant to convert nanoseconds to seconds.
+    private static final float NS2S = 1.0f / 1000000000.0f;
+    private final float[] deltaRotationVector = new float[4]();
+    private float timestamp;
 
-    //wifi variables
-    int level = 0;
-    WifiManager mainWifiObj;
 
     public void button_send(View view) {
         Intent intent = new Intent(this, gps.class);
@@ -102,7 +104,6 @@ public class MainActivity extends ActionBarActivity {
         mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_FASTEST);
         mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE), SensorManager.SENSOR_DELAY_FASTEST);
         mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD), SensorManager.SENSOR_DELAY_FASTEST);
-        mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT), SensorManager.SENSOR_DELAY_FASTEST);
     }
 
     @Override
@@ -111,7 +112,6 @@ public class MainActivity extends ActionBarActivity {
         mSensorManager.unregisterListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER));
         mSensorManager.unregisterListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE));
         mSensorManager.unregisterListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD));
-        mSensorManager.unregisterListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT));
         super.onPause();
     }
 
@@ -133,21 +133,11 @@ public class MainActivity extends ActionBarActivity {
 
         //private inner class
         mSensorListener = new SensorEventListener() {
+
             //for compass
             float[] mGravity;
             float[] mGeomagnetic;
 
-            //Low Pass filter for smoothing accelerometer data
-            protected float[] lowPass( float[] input, float[] output ) {
-                float [] copy = input;
-                if ( output == null )
-                    return copy;
-
-                for ( int i=0; i<input.length; i++ ) {
-                    output[i] = output[i] + ALPHA * (input[i] - output[i]);
-                }
-                return output;
-            }
 
             @Override
             public void onSensorChanged(SensorEvent event) {
@@ -156,7 +146,8 @@ public class MainActivity extends ActionBarActivity {
                 if (sensor.getType() == Sensor.TYPE_ACCELEROMETER && accel != 1) {
 
                     // Smooth out the data so we can better understand thresholds
-                    smooth_accel_vals = lowPass( event.values, smooth_accel_vals);
+                    smooth_accel_vals = highPass(event.values);
+                    System.print.out(smooth_accel_vals);
 
                     //For the compass functionality
                     mGravity = event.values;
@@ -171,14 +162,55 @@ public class MainActivity extends ActionBarActivity {
                 }
                 if (sensor.getType() == Sensor.TYPE_GYROSCOPE && gyro != 1) {
 
-                    // Smooth out the data so we can better understand thresholds
-                    smooth_gyro_vals = lowPass( event.values, smooth_gyro_vals);
-
                     Gyro_x = event.values[0];
                     Gyro_y = event.values[1];
                     Gyro_z = event.values[2];
                     gyro = 1;
+
+                   /*
+                    if (timestamp != 0) {
+                        final float dT = (event.timestamp - timestamp) * NS2S;
+                        // Axis of the rotation sample, not normalized yet.
+                        float axisX = event.values[0];
+                        float axisY = event.values[1];
+                        float axisZ = event.values[2];
+
+                        // Calculate the angular speed of the sample
+                        float omegaMagnitude = sqrt(axisX * axisX + axisY * axisY + axisZ * axisZ);
+
+                        // Normalize the rotation vector if it's big enough to get the axis
+                        // (that is, EPSILON should represent your maximum allowable margin of error)
+                        if (omegaMagnitude > EPSILON) {
+                            axisX /= omegaMagnitude;
+                            axisY /= omegaMagnitude;
+                            axisZ /= omegaMagnitude;
+                        }
+
+                        // Integrate around this axis with the angular speed by the timestep
+                        // in order to get a delta rotation from this sample over the timestep
+                        // We will convert this axis-angle representation of the delta rotation
+                        // into a quaternion before turning it into the rotation matrix.
+                        float thetaOverTwo = omegaMagnitude * dT / 2.0f;
+                        float sinThetaOverTwo = sin(thetaOverTwo);
+                        float cosThetaOverTwo = cos(thetaOverTwo);
+                        deltaRotationVector[0] = sinThetaOverTwo * axisX;
+                        deltaRotationVector[1] = sinThetaOverTwo * axisY;
+                        deltaRotationVector[2] = sinThetaOverTwo * axisZ;
+                        deltaRotationVector[3] = cosThetaOverTwo;
+                    }
+                    timestamp = event.timestamp;
+                    float[] deltaRotationMatrix = new float[9];
+                    SensorManager.getRotationMatrixFromVector(deltaRotationMatrix, deltaRotationVector);
+                    // User code should concatenate the delta rotation we computed with the current rotation
+                    // in order to get the updated rotation.
+                    // rotationCurrent = rotationCurrent * deltaRotationMatrix;
+                    */
+
+
                 }
+
+
+                    }
                 if (sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD && mag != 1) {
 
                     //for the compass functionality
@@ -189,10 +221,7 @@ public class MainActivity extends ActionBarActivity {
                     Mag_z = event.values[2];
                     mag = 1;
                 }
-                if (sensor.getType() == Sensor.TYPE_LIGHT && light != 1) {
-                    light = 1;
-                    Light_intensity = event.values[0];
-                }
+
 
                 /*
                  * COMPASS DATA COLLECTION
@@ -210,7 +239,7 @@ public class MainActivity extends ActionBarActivity {
                         float orientation[] = new float[3];
                         SensorManager.getOrientation(R, orientation);
                         azimuthInRadians = orientation[0]; // orientation contains: azimuth, pitch and roll
-                        azimuthInDegrees = (float)Math.toDegrees(azimuthInRadians);
+                        azimuthInDegrees = (float) Math.toDegrees(azimuthInRadians);
                         if (azimuthInDegrees < 0.0f) {
                             azimuthInDegrees += 360.0f;
                         }
@@ -219,9 +248,9 @@ public class MainActivity extends ActionBarActivity {
 
 
                 //Measure if a step is taken
-                if ((light == 1)&& (mag==1) && (gyro==1) && (accel == 1)){
+                if ((mag == 1) && (gyro == 1) && (accel == 1)) {
                     // step logic
-                    if(currentZ - previousZ > 0) {
+                    if (currentZ - previousZ > 0) {
                         pos_slope_flag = 1;     //set flag if the previous step has finished
                         pos_push_flag = 1;
                     }
@@ -240,18 +269,13 @@ public class MainActivity extends ActionBarActivity {
                     previousZ = currentZ;
 
                     //set sensor flags back to 0
-                    light = 0;
                     mag = 0;
                     gyro = 0;
                     accel = 0;
 
-                    //WiFi
-                    int numberOfLevels=5;
-                    WifiInfo wifiInfo = mainWifiObj.getConnectionInfo();
-                    level=WifiManager.calculateSignalLevel(wifiInfo.getRssi(), numberOfLevels);
-
                     long timeStamp_new = System.currentTimeMillis() - timeStamp;
 
+                    /*
                     try {
                         CSVWriter writer = new CSVWriter(new FileWriter(Environment.getExternalStorageDirectory().toString() + "/data.csv", true));
 
@@ -266,8 +290,7 @@ public class MainActivity extends ActionBarActivity {
                     catch (IOException e) {
                         e.printStackTrace();
                     }
-
-                    //distance = numSteps * stepLength;   //steplength is estimated
+                    */
 
                     /* ANGULAR DISPLACEMENT
                      *
@@ -278,11 +301,10 @@ public class MainActivity extends ActionBarActivity {
                      * and multiply by the time duration and add to the total rotation
                      */
 
-                    if((Gyro_z > 1.1 || Gyro_z < -1.1))       //if we are turning
+                    if ((Gyro_z > 1.1 || Gyro_z < -1.1))       //if we are turning
                     {
                         angular_velocity.add(Math.abs(Gyro_z)); //need absolute value
-                        if(angular_velocity.size() == 1)
-                        {
+                        if (angular_velocity.size() == 1) {
                             timer_start = System.currentTimeMillis();   //begin turn
                         }
                         rotate_Flag = 1; //give ok to calculate rotation
@@ -293,9 +315,8 @@ public class MainActivity extends ActionBarActivity {
                     {
                         time_duration = System.currentTimeMillis() - timer_start; //calculate length of turn
 
-                        if(angular_velocity.size() != 0){
-                            for(int i=0; i < angular_velocity.size();i++)
-                            {
+                        if (angular_velocity.size() != 0) {
+                            for (int i = 0; i < angular_velocity.size(); i++) {
                                 sum_of_velocities += Math.abs((float) angular_velocity.get(i));
                             }
                             avg_velocity = sum_of_velocities / angular_velocity.size();
@@ -309,10 +330,10 @@ public class MainActivity extends ActionBarActivity {
                     }
 
                     TextView gyro = (TextView) findViewById(R.id.textView);
-                    gyro.setText("Time_Stamp: "+timeStamp_new+"\nAccel_x: " + Accel_x + "\nAccel_y: " + Accel_y + "\nAccel_z: "
-                            + Accel_z+ "\nGyro_x: " + Gyro_x + "\nGyro_y: " + Gyro_y + "\nGyro_z: " + Gyro_z + "\nMag_x: " + Mag_x + "\nMag_y: " + Mag_y +
-                            "\nMag_z: " + Mag_z + "\nLight: " + Light_intensity+"\nSteps: "+numSteps+"\nPushes: "+numPushes+
-                            "\nRotation: "+Rotation+"\nCompass: "+azimuthInDegrees+"\nWIFI strength: "+ level);
+                    gyro.setText("Time_Stamp: " + timeStamp_new + "\nAccel_x: " + Accel_x + "\nAccel_y: " + Accel_y + "\nAccel_z: "
+                            + Accel_z + "\nGyro_x: " + Gyro_x + "\nGyro_y: " + Gyro_y + "\nGyro_z: " + Gyro_z + "\nMag_x: " + Mag_x + "\nMag_y: " + Mag_y +
+                            "\nMag_z: " + Mag_z + "\nSteps: " + numSteps + "\nPushes: " + numPushes +
+                            "\nRotation: " + Rotation + "\nCompass: " + azimuthInDegrees);
 
                 }
             }
@@ -348,5 +369,95 @@ public class MainActivity extends ActionBarActivity {
 
         return super.onOptionsItemSelected(item);
     }
+
+
+    /***********************************************************************
+    *                                MATH
+    ************************************************************************/
+    // TODO: calibrate device, turn off landscape changes
+    // http://stackoverflow.com/questions/10119479/calculating-lat-and-long-from-bearing-and-distance
+
+
+
+    public float[] calculate_distance( float[] input) {
+
+
+    }
+
+
+    /*
+    * High pass filter
+    *   Inputs:
+    *     acceleration -> input from the sensor
+    *
+    *   Outputs:
+    *     result -> filtered result
+    */
+    public float[] highPass(float[] acceleration) {
+        //ramp-speed - play with this value until satisfied, NO IDEA
+        float kFilteringFactor = 0.1f;
+        //result.x,.y,.z is the filtered result
+        float[] result = {0,0,0};
+        //high-pass filter to eliminate gravity
+        //accel_last might be the actual force of gravity
+        accel_last[0] = acceleration.x * kFilteringFactor + accel_last[0] * (1.0f - kFilteringFactor);
+        accel_last[1] = acceleration.y * kFilteringFactor + accel_last[1] * (1.0f - kFilteringFactor);
+        accel_last[2] = acceleration.z * kFilteringFactor + accel_last[2] * (1.0f - kFilteringFactor);
+        result.x = acceleration.x - accel_last[0];
+        result.y = acceleration.y - accel_last[1];
+        result.z = acceleration.z - accel_last[2];
+
+        return result;
+    }
+
+    /*
+     * http://stackoverflow.com/questions/10119479/calculating-lat-and-long-from-bearing-and-distance
+     *
+     * Inputs:
+     *  latitude_old = initial latitude reading we will start from
+     *  longitude_old = " " longitude
+     *	bearing = current compass value (I think)
+     *	distance = distance traveled since last latitude and longitude was gathered
+     *
+     *Returns:
+     *	LatLng = new estimated latitude and longitude
+     */
+    float bearing_old = 0;
+    float bearing_new = 0;
+
+    public LatLng calc_LatLng_DR(float latitude_old, float longitude_old, float bearing_old, float bearing_new, float distance) {
+        // I think the math needs the distance to be in kilometers
+        double dist = distance / 1000;
+        // I might need to change for positive negative values
+        double brng = Math.toRadians(bearing_new - bearing_old);
+        double lat1 = Math.toRadians(latitude_old);
+        double lon1 = Math.toRadians(longitude_old);
+
+        double lat2 = Math.asin(Math.sin(lat1) * Math.cos(dist) + Math.cos(lat1) * Math.sin(dist) * Math.cos(brng));
+        double a = Math.atan2(Math.sin(brng) * Math.sin(dist) * Math.cos(lat1), Math.cos(dist) - Math.sin(lat1) * Math.sin(lat2));
+        //System.out.println("a = " +  a);
+        double lon2 = lon1 + a;
+
+        // Not sure if this part is needed
+        lon2 = (lon2 + 3 * Math.PI) % (2 * Math.PI) - Math.PI;
+
+        System.out.println("Latitude = " + Math.toDegrees(lat2) + "\nLongitude = " + Math.toDegrees(lon2));
+
+        LatLng newLatLng = new LatLng(lat2, lon2);
+
+        return new_LatLng;
+    }
+
+
+    /*
+     *
+     *  NOTE: we may want to also use an "avg" function to smooth data further between several data samples
+     *
+     *
+     */
+    // public float[] avg_data( float[] input){ }
+
 }
+
+
 
