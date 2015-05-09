@@ -1,5 +1,6 @@
 package com.carberry.chris.ece498_mp1;
 
+import android.app.ActionBar;
 import android.content.Context;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -16,8 +17,7 @@ import android.view.View;
 import android.content.Intent;
 import android.widget.TextView;
 
-
-import com.google.android.gms.fitness.data.Application;
+import android.app.Application;
 import com.google.android.gms.maps.model.LatLng;
 import com.opencsv.CSVWriter;
 import java.io.FileWriter;
@@ -31,10 +31,13 @@ import java.util.ArrayList;
 // pedometer tutorial
 // http://nebomusic.net/androidlessons/Pedometer_Project.pdf
 
-public class MainActivity extends Application {
+public class MainActivity extends ActionBarActivity {
     //sensor manager
     private SensorManager mSensorManager;
     private SensorEventListener mSensorListener;
+
+
+
 
     //values to Calculate Number of Steps & jumps
     private float previousZ = 0;
@@ -88,14 +91,8 @@ public class MainActivity extends Application {
     private float[] accel_last = {0,0,0};
 
     // Create a constant to convert nanoseconds to seconds.
-    private static final float NS2S = 1.0f / 1000000000.0f;
-    private final float[] deltaRotationVector = new float[4]();
+
     private float timestamp;
-
-    public float getBering() {
-        return azimuthInDegrees;
-    }
-
 
     public void button_send(View view) {
         Intent intent = new Intent(this, gps.class);
@@ -117,6 +114,7 @@ public class MainActivity extends Application {
         mSensorManager.unregisterListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER));
         mSensorManager.unregisterListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE));
         mSensorManager.unregisterListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD));
+
         super.onPause();
     }
 
@@ -126,7 +124,9 @@ public class MainActivity extends Application {
         setContentView(R.layout.activity_main);
 
         getSensorData();
-
+        final globalVariables gv = (globalVariables) getApplicationContext();
+        gv.setDegrees(azimuthInRadians);
+        gv.setPushes(numPushes);
     }
 
     public void getSensorData() {
@@ -134,7 +134,7 @@ public class MainActivity extends Application {
         //for sensors in general
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         //for wifi
-        mainWifiObj = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+        //WifiManager mainWifiObj = (WifiManager) getSystemService(Context.WIFI_SERVICE);
 
         //private inner class
         mSensorListener = new SensorEventListener() {
@@ -151,8 +151,8 @@ public class MainActivity extends Application {
                 if (sensor.getType() == Sensor.TYPE_ACCELEROMETER && accel != 1) {
 
                     // Smooth out the data so we can better understand thresholds
-                    smooth_accel_vals = highPass(event.values);
-                    System.print.out(smooth_accel_vals);
+                    //smooth_accel_vals = highPass(event.values);
+                    //System.print.out(smooth_accel_vals);
 
                     //For the compass functionality
                     mGravity = event.values;
@@ -176,8 +176,11 @@ public class MainActivity extends Application {
                 }
 
 
-                    }
-                if (sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD && mag != 1) {
+
+
+
+
+            if (sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD && mag != 1) {
 
                     //for the compass functionality
                     mGeomagnetic = event.values;
@@ -210,6 +213,7 @@ public class MainActivity extends Application {
                             azimuthInDegrees += 360.0f;
                         }
                     }
+
                 }
 
 
@@ -230,6 +234,7 @@ public class MainActivity extends Application {
                         cur_time_push = System.currentTimeMillis();  //reset timer
                         numPushes++;     //count total # of pushes
                         pos_push_flag = 0;
+
                     }
 
                     previousZ = currentZ;
@@ -344,12 +349,12 @@ public class MainActivity extends Application {
     // http://stackoverflow.com/questions/10119479/calculating-lat-and-long-from-bearing-and-distance
 
 
-
+/*
     public float[] calculate_distance( float[] input) {
 
 
     }
-
+*/
 
     /*
     * High pass filter
@@ -359,6 +364,7 @@ public class MainActivity extends Application {
     *   Outputs:
     *     result -> filtered result
     */
+    /*
     public float[] highPass(float[] acceleration) {
         //ramp-speed - play with this value until satisfied, NO IDEA
         float kFilteringFactor = 0.1f;
@@ -375,7 +381,7 @@ public class MainActivity extends Application {
 
         return result;
     }
-
+*/
     /*
      * http://stackoverflow.com/questions/10119479/calculating-lat-and-long-from-bearing-and-distance
      *
@@ -409,7 +415,7 @@ public class MainActivity extends Application {
 
         System.out.println("Latitude = " + Math.toDegrees(lat2) + "\nLongitude = " + Math.toDegrees(lon2));
 
-        LatLng newLatLng = new LatLng(lat2, lon2);
+        LatLng new_LatLng = new LatLng(lat2, lon2);
 
         return new_LatLng;
     }
