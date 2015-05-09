@@ -50,6 +50,9 @@ public class gps extends FragmentActivity{
 
             latitude = location.getLatitude();
             longitude = location.getLongitude();
+
+
+
             LatLng loc = new LatLng(latitude, longitude);
             if(mMap != null){
                 if(flag==0)  //when the first update comes, we have no previous points,hence this
