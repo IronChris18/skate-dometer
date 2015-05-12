@@ -83,6 +83,11 @@ public class gps extends FragmentActivity{
     // Create a constant to convert nanoseconds to seconds.
 
     //Map stuff
+    int if_dr = 0;
+    double new_distance = 0;
+    double new_dr_distance = 0;
+    double dr_dist = 0;
+    int dr_flag = 0;
     double latitude;
     double longitude;
     int flag = 0;
@@ -144,21 +149,29 @@ public class gps extends FragmentActivity{
             latitude = location.getLatitude();
             longitude = location.getLongitude();
 
+            LatLng dr_loc;// = new LatLng(latitude,longitude);
             LatLng loc = new LatLng(latitude, longitude);
 
             //http://stackoverflow.com/questions/2741403/get-the-distance-between-two-geo-points
             Location loc1 = new Location("");
+            Location dr_loc1 = new Location("");
+
             loc1.setLatitude(latitude);
             loc1.setLongitude(longitude);
             Location loc2 = new Location("");
-            loc2.setLatitude(latitude_old);
-            loc2.setLongitude(longitude_old);
+            loc2.setLatitude(prev.latitude);
+            loc2.setLongitude(prev.longitude);
             float distanceInMeters = loc2.distanceTo(loc1);
 
-            if (distanceInMeters > 20){
+            if (distanceInMeters > 0 && dr_flag > 3){
                 //use dead reckoning
-                LatLng dr_loc = new Latlng();
-                dr_loc = calc_LatLng_DR( prev, azimuthInRadians, distance);
+
+                dr_loc = calc_LatLng_DR( prev, azimuthInRadians, (float)distance);
+                dr_loc1.setLatitude(dr_loc.latitude);
+                dr_loc1.setLongitude(dr_loc.longitude);
+                float dr_distance = loc2.distanceTo(dr_loc1);
+                Log.d("DAWG", "dr_loc1: "+dr_loc1);
+                Log.d("DAWG","prev: "+prev);
                 if (mMap != null) {
                     if (flag == 0)  //when the first update comes, we have no previous points,hence this
                     {
@@ -166,15 +179,18 @@ public class gps extends FragmentActivity{
                         flag = 1;
                     }
                     //Add values to map markers
-                    mMap.addMarker(new MarkerOptions().position(loc).title("Degrees" + azimuthInDegrees).snippet("Pushes" + numSteps));
+                    mMap.addMarker(new MarkerOptions().position(dr_loc).title("Dist_dr: " + new_dr_distance).snippet("dist_gps: " + new_distance));
                     //mMap.addMarker(new MarkerOptions().position(loc));
                     mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(dr_loc, 19.0f));
                     mMap.addPolyline((new PolylineOptions())
                             .add(prev, dr_loc).width(6).color(Color.BLUE)
                             .visible(true));
                     prev = dr_loc;
-                }
 
+
+                    new_dr_distance += dr_distance;
+                    if_dr = 1;
+                }
             }
             else {
                 if (mMap != null) {
@@ -183,8 +199,12 @@ public class gps extends FragmentActivity{
                         prev = loc;
                         flag = 1;
                     }
+                    if(if_dr == 1){
+                        if_dr = 0;
+                        loc = prev;
+                    }
                     //Add values to map markers
-                    mMap.addMarker(new MarkerOptions().position(loc).title("Degrees" + azimuthInDegrees).snippet("Pushes" + numSteps));
+                    mMap.addMarker(new MarkerOptions().position(loc).title("Dist: " + new_distance).snippet("dr: " + new_dr_distance));
                     //zoom camera to current location
                     mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(loc, 19.0f));
                     //create line between points on map
@@ -192,10 +212,19 @@ public class gps extends FragmentActivity{
                             .add(prev, loc).width(6).color(Color.BLUE)
                             .visible(true));
                     prev = loc;
+                    if(dr_flag > 0) {
+                        new_distance += distanceInMeters;
+                        Log.d("DAMN","gps_dist: "+new_distance);
+                        new_dr_distance += distanceInMeters;
+                    }
+                    if(dr_flag < 5){
+                        dr_flag++;
+                    }
                 }
             }
             // reset dead reckoning
             distance = 0;
+            //new_distance += distanceInMeters;
         }
     };
 
@@ -228,7 +257,7 @@ public class gps extends FragmentActivity{
                     // In this example, alpha is calculated as t / (t + dT),
                     // where t is the low-pass filter's time-constant and
                     // dT is the event delivery rate.
-                    float alpha = 0.8;
+                    float alpha = 0.8f;
                     double gravity[] = {0,0,0};
                     double linear_acceleration[] = {0,0,0};
                     // Isolate the force of gravity with the low-pass filter.
@@ -430,23 +459,36 @@ public class gps extends FragmentActivity{
      *	LatLng = new estimated latitude and longitude
      */
     public LatLng calc_LatLng_DR(LatLng prev,  float bearing, float distance) {
-        // I think the math needs the distance to be in kilometers
-        double dist = distance / 1000;
+        double radius = 6371.f; //in km
+        distance /= 1000.0;     //in km
+        // angular distance
+        double adist = Math.toRadians(distance/radius);
+        Log.d("DAMN","calc_dist: "+adist);
         // I might need to change for positive negative values
-        double brng = bearing;
+        double brng = Math.toRadians(bearing);
         double lat1 = prev.latitude;
         double lon1 = prev.longitude;
+        Log.d("DAMN","lat1: "+lat1);
+        Log.d("DAMN","lon1: "+lon1);
+        lat1 = Math.toRadians(prev.latitude);
+        lon1 = Math.toRadians(prev.longitude);
 
-        double lat2 = Math.asin(Math.sin(lat1) * Math.cos(dist) + Math.cos(lat1) * Math.sin(dist) * Math.cos(brng));
-        double a = Math.atan2(Math.sin(brng) * Math.sin(dist) * Math.cos(lat1), Math.cos(dist) - Math.sin(lat1) * Math.sin(lat2));
+        double lat2 = Math.asin(Math.sin(lat1) * Math.cos(adist) + Math.cos(lat1) * Math.sin(adist) * Math.cos(brng));
+        double a = Math.atan2(Math.sin(brng) * Math.sin(adist) * Math.cos(lat1), Math.cos(adist) - Math.sin(lat1) * Math.sin(lat2));
         //System.out.println("a = " +  a);
+        Log.d("DAMN","a: "+a);
         double lon2 = lon1 + a;
 
         // Not sure if this part is needed
-        lon2 = (lon2 + 3 * Math.PI) % (2 * Math.PI) - Math.PI;
+        //lon2 = (lon2 + 3 * Math.PI) % (2 * Math.PI) - Math.PI;
+
+
 
         //System.out.println("Latitude = " + Math.toDegrees(lat2) + "\nLongitude = " + Math.toDegrees(lon2));
-
+        lat2 = Math.toDegrees(lat2);
+        lon2 = Math.toDegrees(lon2);
+        Log.d("DAMN","lat2: "+lat2);
+        Log.d("DAMN","lon2: "+lon2);
         LatLng new_LatLng = new LatLng(lat2, lon2);
 
         return new_LatLng;
@@ -455,10 +497,10 @@ public class gps extends FragmentActivity{
     // use integration to calculate the distance traveled from the accelerometer values
      public void calc_dist(double[] acceleration,long timestamp_new){
 
-        velocity_threshold = 3;
+        int velocity_threshold = 3;
         // we need a way to reset velocity if we get close to stoping, velocity will probably
         // be our biggest source of error
-        if(acceleration[0 < velocity_thresholid){
+        if(acceleration[0] < velocity_threshold){
             velocity_low_flag ++;
         }
         if(velocity_low_flag == 3){
