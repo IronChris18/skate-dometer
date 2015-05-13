@@ -5,7 +5,7 @@
     <string name="hello_world">Congratulations!\n You\'re trying to be healthy.\n *Background Applause*</string>
     <string name="action_settings">Settings</string>
     <string name="gyro"> New Window, Yay! Now get back to work!</string>
-    <string name="button_send"> Fuck </string>
+    <string name="button_send"> MapMyRide </string>
     <string name="title_activity_test_button">test_button</string>
     <string name="title_activity_gps">Map</string>
 

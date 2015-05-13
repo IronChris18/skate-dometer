@@ -124,9 +124,6 @@ public class MainActivity extends ActionBarActivity {
         setContentView(R.layout.activity_main);
 
         getSensorData();
-        final globalVariables gv = (globalVariables) getApplicationContext();
-        gv.setDegrees(azimuthInRadians);
-        gv.setPushes(numPushes);
     }
 
     public void getSensorData() {
@@ -246,14 +243,13 @@ public class MainActivity extends ActionBarActivity {
 
                     long timeStamp_new = System.currentTimeMillis() - timeStamp;
 
-                    /*
+
                     try {
                         CSVWriter writer = new CSVWriter(new FileWriter(Environment.getExternalStorageDirectory().toString() + "/data.csv", true));
 
                         String[] record = new String[]{Float.toString(timeStamp_new), Float.toString(Accel_x), Float.toString(Accel_y),
                                 Float.toString(Accel_z), Float.toString(Gyro_x), Float.toString(Gyro_y), Float.toString(Gyro_z),
-                                Float.toString(Mag_x), Float.toString(Mag_y), Float.toString(Mag_z), Float.toString(Light_intensity), Float.toString(azimuthInDegrees),
-                                Float.toString(level)};
+                                Float.toString(Mag_x), Float.toString(Mag_y), Float.toString(Mag_z), Float.toString(azimuthInDegrees)};
 
                         writer.writeNext(record);
                         writer.close();
@@ -261,7 +257,7 @@ public class MainActivity extends ActionBarActivity {
                     catch (IOException e) {
                         e.printStackTrace();
                     }
-                    */
+
 
                     /* ANGULAR DISPLACEMENT
                      *

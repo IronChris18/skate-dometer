@@ -169,17 +169,25 @@ public class gps extends FragmentActivity{
             Location loc2 = new Location("");
             loc2.setLatitude(prev.latitude);
             loc2.setLongitude(prev.longitude);
-            float distanceInMeters = loc2.distanceTo(loc1);
+            dr_loc = calc_LatLng_DR( prev, azimuthInRadians, (float)distance);
+            dr_loc1.setLatitude(dr_loc.latitude);
+            dr_loc1.setLongitude(dr_loc.longitude);
+            float dr_distance = loc2.distanceTo(dr_loc1); //dr points
+            float distanceInMeters = loc2.distanceTo(loc1); //gps points
 
-            if (distanceInMeters > 10 && dr_flag > 3 && timer_flag < 4){
+            if (distanceInMeters > 10 && (dr_distance > 3)) {
+                timer_flag = 0;
+                if_dr = 1;
+            }
+            else {
+                if_dr = 0;
+                timer_flag = 1;
+            }
+
+            if (dr_flag > 3 && timer_flag == 0){
                 //use dead reckoning
                 timer_flag++;
-                dr_loc = calc_LatLng_DR( prev, azimuthInRadians, (float)distance);
-                dr_loc1.setLatitude(dr_loc.latitude);
-                dr_loc1.setLongitude(dr_loc.longitude);
-                float dr_distance = loc2.distanceTo(dr_loc1);
-                Log.d("DAWG", "dr_loc1: "+dr_loc1);
-                Log.d("DAWG","prev: "+prev);
+
                 if (mMap != null) {
                     if (flag == 0)  //when the first update comes, we have no previous points,hence this
                     {
@@ -187,7 +195,6 @@ public class gps extends FragmentActivity{
                         flag = 1;
                     }
                     //Add values to map markers
-                    Log.d("DAWG","dr_loc: "+dr_loc);
                     mMap.addMarker(new MarkerOptions().position(dr_loc).title("Dist_dr: " + new_dr_distance).snippet("dist_gps: " + new_distance));
                     mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(dr_loc, 19.0f));
                     mMap.addPolyline((new PolylineOptions())
@@ -195,9 +202,7 @@ public class gps extends FragmentActivity{
                             .visible(true));
                     prev = dr_loc;
 
-
                     new_dr_distance += dr_distance;
-                    if_dr = 1;
                 }
             }
             else {
@@ -223,11 +228,10 @@ public class gps extends FragmentActivity{
                     prev = loc;
                     if(dr_flag > 0) {
                         new_distance += distanceInMeters;
-                        Log.d("DAMN","gps_dist: "+new_distance);
                         new_dr_distance += distanceInMeters;
                     }
                     if(dr_flag < 5){
-                        dr_flag++;
+                        dr_flag++;      //forces gps to run 3 times at start
                     }
                 }
             }
@@ -262,44 +266,19 @@ public class gps extends FragmentActivity{
 
                 if (sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION && lin != 1) {
 
-                    Lin_x = event.values[0];
-                    Lin_y = event.values[1];
-                    Lin_z = event.values[2];
                     lin = 1;
                     double linear_acceleration[] = {0,0,0};
-                    linear_acceleration[0] = Lin_x;
-                    linear_acceleration[1] = Lin_y;
-                    linear_acceleration[2] = Lin_z;
+                    linear_acceleration[0] = event.values[0];
+                    linear_acceleration[1] = event.values[1];
+                    linear_acceleration[2] = event.values[2];
 
                     sensorTimeStamp = event.timestamp;
                     sensorTimeStamp /= (1000000000.0);
-                    calc_dist(linear_acceleration,sensorTimeStamp);
+                    calc_dist(linear_acceleration,sensorTimeStamp); //calculate deadreckoning distance
                     sensorTimeStamp_old =  sensorTimeStamp;
                 }
                 if (sensor.getType() == Sensor.TYPE_ACCELEROMETER && accel != 1) {
 
-
-                    // In this example, alpha is calculated as t / (t + dT),
-                    // where t is the low-pass filter's time-constant and
-                    // dT is the event delivery rate.
-                    /*float alpha = 0.8f;
-                    double gravity[] = {0,0,0};
-                    double linear_acceleration[] = {0,0,0};
-                    // Isolate the force of gravity with the low-pass filter.
-                    gravity[0] = alpha * gravity[0] + (1 - alpha) * event.values[0];
-                    gravity[1] = alpha * gravity[1] + (1 - alpha) * event.values[1];
-                    gravity[2] = alpha * gravity[2] + (1 - alpha) * event.values[2];
-
-                    // Remove the gravity contribution with the high-pass filter.
-                    linear_acceleration[0] = event.values[0] - gravity[0];
-                    linear_acceleration[1] = event.values[1] - gravity[1];
-                    linear_acceleration[2] = event.values[2] - gravity[2];
-
-                    sensorTimeStamp = event.timestamp;
-                    sensorTimeStamp /= (1000000000.0);
-                    calc_dist(linear_acceleration,sensorTimeStamp);
-                    sensorTimeStamp_old =  sensorTimeStamp;
-*/
                     //For the compass functionality
                     mGravity = event.values;
 
@@ -353,7 +332,6 @@ public class gps extends FragmentActivity{
                     }
                 }
 
-
                 //Measure if a step is taken
                 if ((mag == 1) && (gyro == 1) && (accel == 1)) {
                     lin = 0;
@@ -380,25 +358,6 @@ public class gps extends FragmentActivity{
                     mag = 0;
                     gyro = 0;
                     accel = 0;
-
-                    long timeStamp_new = System.currentTimeMillis() - timeStamp;
-
-                    /*
-                    try {
-                        CSVWriter writer = new CSVWriter(new FileWriter(Environment.getExternalStorageDirectory().toString() + "/data.csv", true));
-
-                        String[] record = new String[]{Float.toString(timeStamp_new), Float.toString(Accel_x), Float.toString(Accel_y),
-                                Float.toString(Accel_z), Float.toString(Gyro_x), Float.toString(Gyro_y), Float.toString(Gyro_z),
-                                Float.toString(Mag_x), Float.toString(Mag_y), Float.toString(Mag_z), Float.toString(Light_intensity), Float.toString(azimuthInDegrees),
-                                Float.toString(level)};
-
-                        writer.writeNext(record);
-                        writer.close();
-                    }
-                    catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    */
 
                     /* ANGULAR DISPLACEMENT
                      *
@@ -490,61 +449,42 @@ public class gps extends FragmentActivity{
         distance /= 1000.0;     //in km
         // angular distance
         double adist = Math.toRadians(distance/radius);
-        Log.d("DAMN","calc_dist: "+adist);
         // I might need to change for positive negative values
         double brng = Math.toRadians(azimuthInDegrees);
         double lat1 = prev.latitude;
         double lon1 = prev.longitude;
-        Log.d("DAMN","lat1: "+lat1);
-        Log.d("DAMN","lon1: "+lon1);
         lat1 = Math.toRadians(prev.latitude);
         lon1 = Math.toRadians(prev.longitude);
 
         double lat2 = Math.asin(Math.sin(lat1) * Math.cos(adist) + Math.cos(lat1) * Math.sin(adist) * Math.cos(brng));
         double a = Math.atan2(Math.sin(brng) * Math.sin(adist) * Math.cos(lat1), Math.cos(adist) - Math.sin(lat1) * Math.sin(lat2));
-        //System.out.println("a = " +  a);
-        Log.d("DAMN","a: "+a);
         double lon2 = lon1 + a;
-
-        // Not sure if this part is needed
-        //lon2 = (lon2 + 3 * Math.PI) % (2 * Math.PI) - Math.PI;
-
-
-
-        //System.out.println("Latitude = " + Math.toDegrees(lat2) + "\nLongitude = " + Math.toDegrees(lon2));
         lat2 = Math.toDegrees(lat2);
         lon2 = Math.toDegrees(lon2);
-        Log.d("DAMN","lat2: "+lat2);
-        Log.d("DAMN","lon2: "+lon2);
+
         LatLng new_LatLng = new LatLng(lat2, lon2);
 
         return new_LatLng;
     }
 
     // use integration to calculate the distance traveled from the accelerometer values
-     public void calc_dist(double[] acceleration,double timestamp_new){
-        double temp = Math.abs(acceleration[1]);
+     public void calc_dist(double[] acceleration,double timestamp_new) {
+         double temp = Math.abs(acceleration[1]);
          temp *= 35;
-        double velocity_threshold = 0.5;
-        // we need a way to reset velocity if we get close to stopping, velocity will probably
-        // be our biggest source of error
-        if(temp < velocity_threshold){
-            velocity_low_flag++;
-        }
-        if(velocity_low_flag == 10){
-            velocity_low_flag = 0;
-            velocity = 0;
-        }
+         double velocity_threshold = 0.5;
+         // we need a way to reset velocity if we get close to stopping, velocity will probably
+         // be our biggest source of error
+         if (temp < velocity_threshold) {
+             velocity_low_flag++;
+         }
+         if (velocity_low_flag == 10) {
+             velocity_low_flag = 0;
+             velocity = 0;
+         }
 
-        double DT = timestamp_new - sensorTimeStamp_old;
-        velocity = temp*DT + velocity;
-        distance = distance + velocity*DT + .5*temp*DT*DT;
-        Log.d("SHIT","vel: "+velocity);
-         //Log.d("SHIT","dist: "+distance);
-         //Log.d("SHIT","Time: "+DT);
-         Log.d("SHIT","Acc_0: "+acceleration[0]);
-         Log.d("SHIT","Acc_1: "+acceleration[1]);
-         Log.d("SHIT","Acc_2: "+acceleration[2]);
+         double DT = timestamp_new - sensorTimeStamp_old;
+         velocity = temp * DT + velocity;
+         distance = distance + velocity * DT + .5 * temp * DT * DT;
      }
 
 }
