@@ -87,7 +87,9 @@ public class gps extends FragmentActivity{
     // Create a constant to convert nanoseconds to seconds.
 
     //Map stuff
-
+    int timer_flag = 0;
+    LatLng dr_loc = new LatLng(0,0);
+    LatLng loc = new LatLng(0, 0);
     int if_dr = 0;
     double new_distance = 0;
     double new_dr_distance = 0;
@@ -155,9 +157,9 @@ public class gps extends FragmentActivity{
             latitude = location.getLatitude();
             longitude = location.getLongitude();
 
-            LatLng dr_loc;// = new LatLng(latitude,longitude);
-            LatLng loc = new LatLng(latitude, longitude);
-
+            //LatLng dr_loc = new LatLng(latitude,longitude);
+            //LatLng loc = new LatLng(latitude, longitude);
+            loc = new LatLng(latitude, longitude);
             //http://stackoverflow.com/questions/2741403/get-the-distance-between-two-geo-points
             Location loc1 = new Location("");
             Location dr_loc1 = new Location("");
@@ -169,9 +171,9 @@ public class gps extends FragmentActivity{
             loc2.setLongitude(prev.longitude);
             float distanceInMeters = loc2.distanceTo(loc1);
 
-            if (distanceInMeters > 0 && dr_flag > 3){
+            if (distanceInMeters > 10 && dr_flag > 3 && timer_flag < 4){
                 //use dead reckoning
-
+                timer_flag++;
                 dr_loc = calc_LatLng_DR( prev, azimuthInRadians, (float)distance);
                 dr_loc1.setLatitude(dr_loc.latitude);
                 dr_loc1.setLongitude(dr_loc.longitude);
@@ -185,8 +187,8 @@ public class gps extends FragmentActivity{
                         flag = 1;
                     }
                     //Add values to map markers
+                    Log.d("DAWG","dr_loc: "+dr_loc);
                     mMap.addMarker(new MarkerOptions().position(dr_loc).title("Dist_dr: " + new_dr_distance).snippet("dist_gps: " + new_distance));
-                    //mMap.addMarker(new MarkerOptions().position(loc));
                     mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(dr_loc, 19.0f));
                     mMap.addPolyline((new PolylineOptions())
                             .add(prev, dr_loc).width(6).color(Color.BLUE)
@@ -209,6 +211,7 @@ public class gps extends FragmentActivity{
                         if_dr = 0;
                         loc = prev;
                     }
+                    timer_flag = 0;
                     //Add values to map markers
                     mMap.addMarker(new MarkerOptions().position(loc).title("Dist: " + new_distance).snippet("dr: " + new_dr_distance));
                     //zoom camera to current location
@@ -489,7 +492,7 @@ public class gps extends FragmentActivity{
         double adist = Math.toRadians(distance/radius);
         Log.d("DAMN","calc_dist: "+adist);
         // I might need to change for positive negative values
-        double brng = Math.toRadians(bearing);
+        double brng = Math.toRadians(azimuthInDegrees);
         double lat1 = prev.latitude;
         double lon1 = prev.longitude;
         Log.d("DAMN","lat1: "+lat1);
@@ -521,13 +524,14 @@ public class gps extends FragmentActivity{
     // use integration to calculate the distance traveled from the accelerometer values
      public void calc_dist(double[] acceleration,double timestamp_new){
         double temp = Math.abs(acceleration[1]);
+         temp *= 35;
         double velocity_threshold = 0.5;
         // we need a way to reset velocity if we get close to stopping, velocity will probably
         // be our biggest source of error
         if(temp < velocity_threshold){
             velocity_low_flag++;
         }
-        if(velocity_low_flag == 3){
+        if(velocity_low_flag == 10){
             velocity_low_flag = 0;
             velocity = 0;
         }
