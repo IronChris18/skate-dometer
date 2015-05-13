@@ -44,6 +44,10 @@ public class gps extends FragmentActivity{
 
     //values for csv file
     long timeStamp = System.currentTimeMillis();
+    int lin = 0;
+    float Lin_x = 0;
+    float Lin_y = 0;
+    float Lin_z = 0;
     float Accel_x = 0;
     float Accel_y = 0;
     float Accel_z = 0;
@@ -78,11 +82,12 @@ public class gps extends FragmentActivity{
 
     int velocity_low_flag = 0;
     double velocity = 0.0;
-    long sensorTimeStamp = 0;
-    long sensorTimeStamp_old = 0;
+    double sensorTimeStamp = 0.0;
+    double sensorTimeStamp_old = 0.0;
     // Create a constant to convert nanoseconds to seconds.
 
     //Map stuff
+
     int if_dr = 0;
     double new_distance = 0;
     double new_dr_distance = 0;
@@ -101,7 +106,7 @@ public class gps extends FragmentActivity{
         mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_FASTEST);
         mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE), SensorManager.SENSOR_DELAY_FASTEST);
         mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD), SensorManager.SENSOR_DELAY_FASTEST);
-
+        mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION), SensorManager.SENSOR_DELAY_FASTEST);
     }
 
     @Override
@@ -110,6 +115,7 @@ public class gps extends FragmentActivity{
         mSensorManager.unregisterListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER));
         mSensorManager.unregisterListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE));
         mSensorManager.unregisterListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD));
+        mSensorManager.unregisterListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION));
         super.onPause();
     }
 
@@ -251,13 +257,29 @@ public class gps extends FragmentActivity{
             public void onSensorChanged(SensorEvent event) {
                 Sensor sensor = event.sensor;
 
+                if (sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION && lin != 1) {
+
+                    Lin_x = event.values[0];
+                    Lin_y = event.values[1];
+                    Lin_z = event.values[2];
+                    lin = 1;
+                    double linear_acceleration[] = {0,0,0};
+                    linear_acceleration[0] = Lin_x;
+                    linear_acceleration[1] = Lin_y;
+                    linear_acceleration[2] = Lin_z;
+
+                    sensorTimeStamp = event.timestamp;
+                    sensorTimeStamp /= (1000000000.0);
+                    calc_dist(linear_acceleration,sensorTimeStamp);
+                    sensorTimeStamp_old =  sensorTimeStamp;
+                }
                 if (sensor.getType() == Sensor.TYPE_ACCELEROMETER && accel != 1) {
 
 
                     // In this example, alpha is calculated as t / (t + dT),
                     // where t is the low-pass filter's time-constant and
                     // dT is the event delivery rate.
-                    float alpha = 0.8f;
+                    /*float alpha = 0.8f;
                     double gravity[] = {0,0,0};
                     double linear_acceleration[] = {0,0,0};
                     // Isolate the force of gravity with the low-pass filter.
@@ -271,9 +293,10 @@ public class gps extends FragmentActivity{
                     linear_acceleration[2] = event.values[2] - gravity[2];
 
                     sensorTimeStamp = event.timestamp;
+                    sensorTimeStamp /= (1000000000.0);
                     calc_dist(linear_acceleration,sensorTimeStamp);
                     sensorTimeStamp_old =  sensorTimeStamp;
-
+*/
                     //For the compass functionality
                     mGravity = event.values;
 
@@ -330,6 +353,7 @@ public class gps extends FragmentActivity{
 
                 //Measure if a step is taken
                 if ((mag == 1) && (gyro == 1) && (accel == 1)) {
+                    lin = 0;
                     // step logic
                     if (currentZ - previousZ > 0) {
                         pos_slope_flag = 1;     //set flag if the previous step has finished
@@ -495,21 +519,28 @@ public class gps extends FragmentActivity{
     }
 
     // use integration to calculate the distance traveled from the accelerometer values
-     public void calc_dist(double[] acceleration,long timestamp_new){
-
-        int velocity_threshold = 3;
-        // we need a way to reset velocity if we get close to stoping, velocity will probably
+     public void calc_dist(double[] acceleration,double timestamp_new){
+        double temp = Math.abs(acceleration[1]);
+        double velocity_threshold = 0.5;
+        // we need a way to reset velocity if we get close to stopping, velocity will probably
         // be our biggest source of error
-        if(acceleration[0] < velocity_threshold){
-            velocity_low_flag ++;
+        if(temp < velocity_threshold){
+            velocity_low_flag++;
         }
         if(velocity_low_flag == 3){
             velocity_low_flag = 0;
             velocity = 0;
         }
+
         double DT = timestamp_new - sensorTimeStamp_old;
-        velocity = acceleration[1]*DT + velocity;
-        distance = distance + velocity*DT + .5*acceleration[0]*DT*DT;
+        velocity = temp*DT + velocity;
+        distance = distance + velocity*DT + .5*temp*DT*DT;
+        Log.d("SHIT","vel: "+velocity);
+         //Log.d("SHIT","dist: "+distance);
+         //Log.d("SHIT","Time: "+DT);
+         Log.d("SHIT","Acc_0: "+acceleration[0]);
+         Log.d("SHIT","Acc_1: "+acceleration[1]);
+         Log.d("SHIT","Acc_2: "+acceleration[2]);
      }
 
 }
